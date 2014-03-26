@@ -12,15 +12,15 @@ resultCounts <- sqldf("SELECT `Result_Parameter_Name`, `Sample_Matrix`, `Fractio
     FROM `eimData`
     GROUP BY `Result_Parameter_Name`, `Sample_Matrix`, `Fraction_Analyzed`, `Result_Method`")
 
-# Rows with missing required information (required for all Results, not conditionally required)
-qualifiers <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`
-    FROM `eimData`
-    WHERE `Study_ID`  '' ")
-
 # Rows with result qualifiers requiring detection & reporting limits
-missingData <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`, 
+qualifiers <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
     `Result_Data_Qualifier`, `Result_Reporting_Limit`, `Result_Reporting_Limit_Type`,
-    `Result_Detection_Limit`, `Result_Detection_Limit_Type`
+    `Result_Detection_Limit`, `Result_Detection_Limit_Type`    
+    FROM `eimData`
+    WHERE length(`Result_Data_Qualifier`) > 0")
+
+# Rows with missing required information (required for all Results, not conditionally required)
+missingData <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`
     FROM `eimData`
     WHERE `Study_ID` = '' OR  `Study_ID` IS NULL
       OR `Location_ID` = '' OR  `Location_ID` IS NULL
