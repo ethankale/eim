@@ -1,6 +1,6 @@
-# Required for the script to work.  Can skip installation if already installed.
-install.packages("sqldf")
+# Required for the script to work.  Must be installed.
 library(sqldf)
+library(plyr)
 
 # Import data.  Defaults to a test data set.
 eimData <- read.csv("test-data-sw.csv")
@@ -29,3 +29,14 @@ missingData <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Coll
       OR `Field_Collector` = '' OR  `Field_Collector` IS NULL
       OR `Field_Collection_Start_Date` = '' OR  `Field_Collection_Start_Date` IS NULL
       ")
+
+# Summarize subsets of data
+summaries <- ddply(
+    eimData, 
+    .(Location_ID, Result_Parameter_Name, Result_Value_Units, Sample_Matrix, Fraction_Analyzed, Result_Method), 
+    summarize, 
+    mean  = signif(mean(Result_Value), digits = 3),
+    max   = signif(max(Result_Value), digits = 3),
+    min   = signif(min(Result_Value), digits = 3),
+    q25   = signif(quantile(Result_Value)[2], digits = 3)
+    )
