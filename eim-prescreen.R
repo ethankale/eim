@@ -1,10 +1,31 @@
 # Required for the script to work.  Must be installed.
 library(sqldf)
 library(plyr)
+library(ggplot2)
+library(lattice)
 
-# Import data.  Defaults to a test data set.
+# Import data.  Defaults to a test data set.  Make some derivative data sets.
 eimData <- read.csv("test-data-sw.csv")
- 
+eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
+eimData <- eimData[with(eimData, order(New_Name)), ]
+
+# Visual summaries of the data
+pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
+print(xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
+        data   = eimData, 
+        layout = c(3,4),
+        xlab   = "Date",
+        ylab   = "Value",
+        strip  = strip.custom(bg = "gray"),
+        as.table = TRUE,
+        par.strip.text = list(
+          lines = 3.5,
+          cex   = .65
+        ),
+        scales = list(y = list(relation = "free")))
+      )
+dev.off()
+
 # Create tables to summarize data
 # Count of Results by method
 resultCounts <- sqldf("SELECT `Result_Parameter_Name`, `Sample_Matrix`, `Fraction_Analyzed`, `Result_Method`,
@@ -35,6 +56,7 @@ summaries <- ddply(
     eimData, 
     .(Location_ID, Result_Parameter_Name, Result_Value_Units, Sample_Matrix, Fraction_Analyzed, Result_Method), 
     summarize, 
+    count = signif(length(Result_Value), digits = 3),
     mean  = signif(mean(Result_Value), digits = 3),
     max   = signif(max(Result_Value), digits = 3),
     min   = signif(min(Result_Value), digits = 3),
