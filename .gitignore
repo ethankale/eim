@@ -8,4 +8,4 @@
 .RData
 
 # Byproducts of running scripts
-.pdf
+*.pdf
