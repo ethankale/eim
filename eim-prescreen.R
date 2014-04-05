@@ -1,9 +1,13 @@
+######
 # Required for the script to work.  Must be installed.
+######
 library(sqldf)
 library(plyr)
 library(lattice)
 
-# Import data.  Defaults to a test data set.  Make some derivative data sets.
+######
+# Import data.  Defaults to a test data set.  Create "New_Name" column to facilitate summaries.
+######
 eimData <- read.csv("test-data-sw.csv")
 eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
 eimData <- eimData[with(eimData, order(New_Name)), ]
@@ -12,6 +16,8 @@ eimData <- eimData[with(eimData, order(New_Name)), ]
 pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
 print(xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
         data   = eimData, 
+        groups = Result_Data_Qualifier,
+        auto.key = list(columns=3),
         layout = c(3,4),
         xlab   = "Date",
         ylab   = "Value",
@@ -21,8 +27,9 @@ print(xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | N
           lines = 3.5,
           cex   = .65
         ),
-        type    = c("g", "p"),
-        scales = list(y = list(relation = "free")))
+        type    = c("p"),
+        scales = list(y = list(relation = "free"))
+        )
       )
 dev.off()
 
@@ -49,21 +56,8 @@ summaries <- ddply(
 )
 
 ######
-# Create tables of rows with missing values
+# Create tables of rows with missing/possibly wrong values
 ######
-
-# Rows with result qualifiers requiring detection & reporting limits
-qualifiers <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
-  `Result_Data_Qualifier`, `Result_Reporting_Limit`, `Result_Reporting_Limit_Type`,
-  `Result_Detection_Limit`, `Result_Detection_Limit_Type`    
-  FROM `eimData`
-  WHERE length(`Result_Data_Qualifier`) > 0
-    AND (`Result_Detection_Limit` IS NULL OR `Result_Detection_Limit` = ''
-          OR `Result_Detection_Limit_Type` IS NULL OR `Result_Detection_Limit_Type` = ''
-          OR `Result_Reporting_Limit` IS NULL OR `Result_Reporting_Limit` = ''
-          OR `Result_Reporting_Limit_Type` IS NULL OR `Result_Reporting_Limit_Type` = ''
-        )
-")
 
 # Rows with missing required information (required for all Results, not conditionally required)
 missingData <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Study_Specific_Location_ID`, `Field_Collection_Type`, `Field_Collector`,
@@ -76,12 +70,84 @@ missingData <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Study_Spec
     OR `Field_Collection_Type` = '' OR  `Field_Collection_Type` IS NULL
     OR `Field_Collector` = '' OR  `Field_Collector` IS NULL
     OR `Field_Collection_Start_Date` = '' OR  `Field_Collection_Start_Date` IS NULL
-    OR `Sample_Matrix` = '' OR `Sample_Matrix` IS NULL
-    OR `Sample_Source` = '' OR `Sample_Source` IS NULL
+    OR `Sample_Matrix` IS NULL OR `Sample_Matrix` NOT IN
+      ('Air/Gas', 'Other Liquid', 'Habitat', 'Solid/Sediment', 'Tissue', 'Water')
+    OR `Sample_Source` IS NULL OR `Sample_Source` NOT IN
+      ('Indoor Air', 'Outdoor Air', 'Landfill Gas', 'Soil Gas', 'Animal Tissue', 'Animal Tissue - Lab Exposure', 'Plant Tissue', 
+        'Periphyton', 'Freshwater Taxonomy', 'Salt/Marine Taxonomy', 'Habitat Metrics', 'Freshwater Sediment', 'Brackish Sediment', 
+        'Salt/Marine Sediment', 'Freshwater Porewater', 'Brackish Porewater', 'Salt/Marine Porewater', 'Elutriate', 'Rock/Gravel', 
+        'Soil', 'CSO Outfall ', 'CSS In-Line ', 'CSS Catch Basin', 'Stormwater BMP Effluent ', 'Stormwater BMP Mid ', 'Stormwater BMP Influent', 
+        'Stormwater Catch Basin', 'Stormwater In-Line', 'Stormwater Outfall ', 'Stormwater Sheetflow', 'Precipitation', 'Fresh/Surface Water', 
+        'Brackish Water', 'Salt/Marine Water', 'Groundwater', 'Pit Water', 'Precipitation', 'Water Supply', 'Industrial Discharge', 'Source - Other', 
+        'WWTP Effluent'
+      )
     OR `Result_Parameter_Name` = '' OR `Result_Parameter_Name` IS NULL
     OR `Result_Value` = '' OR `Result_Value` IS NULL
     OR `Result_Value_Units` = '' OR `Result_Value_Units` IS NULL
     OR `Result_Method` = '' OR `Result_Method` IS NULL
+")
+
+# Rows with result qualifiers requiring detection & reporting limits
+qualifiers <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+  `Result_Data_Qualifier`, `Result_Reporting_Limit`, `Result_Reporting_Limit_Type`,
+  `Result_Detection_Limit`, `Result_Detection_Limit_Type`    
+  FROM `eimData`
+  WHERE length(`Result_Data_Qualifier`) > 0
+    AND (`Result_Detection_Limit` IS NULL OR `Result_Detection_Limit` = ''
+          OR `Result_Detection_Limit_Type` IS NULL OR `Result_Detection_Limit_Type` NOT IN
+            ('MDL','EDL','LOD','IDL','CRDL','UNKNOWN')
+          OR `Result_Reporting_Limit` IS NULL OR `Result_Reporting_Limit` = ''
+          OR `Result_Reporting_Limit_Type` IS NULL OR `Result_Reporting_Limit_Type` NOT IN
+            ('MRL','PQL','EQL','LOQ','SQL','CRQL','LabDef','UNKNOWN')
+        )
+")
+
+# Rows with detection limits missing detection limit types
+missingDL <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+  `Result_Data_Qualifier`, `Result_Reporting_Limit`, `Result_Reporting_Limit_Type`,
+  `Result_Detection_Limit`, `Result_Detection_Limit_Type`    
+  FROM `eimData`
+  WHERE `Result_Detection_Limit` IS NOT NULL
+    AND (`Result_Detection_Limit_Type` IS NULL OR `Result_Detection_Limit_Type` = '')
+")
+
+# Rows flagged as non-detects or estimates that exceed relevent limits
+wrongLimits <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+  `Result_Data_Qualifier`, `Result_Reporting_Limit`, `Result_Reporting_Limit_Type`,
+  `Result_Detection_Limit`, `Result_Detection_Limit_Type`, `Result_Value`
+  FROM `eimData`
+  WHERE (`Result_Data_Qualifier` = 'U' AND `Result_Value` > `Result_Detection_Limit`)
+  OR (`Result_Data_Qualifier` = 'J' AND `Result_Value` >  `Result_Reporting_Limit`)
+")
+
+# Rows with missing stormwater-specific data.
+missingStormwater <- sqldf("SELECT `New_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+  `Storm_Event_Qualifier`, `Sample_Collection_Method`, `Result_Value`
+  FROM `eimData`
+  WHERE `Storm_Event_Qualifier` IS NULL OR `Storm_Event_Qualifier` = ''
+  OR `Sample_Collection_Method` IS NULL OR `Sample_Collection_Method` = ''
+")
+
+# Rows with missing sediment-specific data.
+missingSediment <- sqldf("SELECT `Result_Parameter_Name`, `Sample_Matrix`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`, 
+  `Field_Collection_Reference_Point`, `Field_Collection_Upper_Depth`,`Field_Collection_Lower_Depth`,
+  `Field_Collection_Depth_Units`, `Result_Basis`, `Sample_Collection_Method`, `Result_Value`
+  FROM `eimData`
+  WHERE `Sample_Matrix` = 'Solid/Sediment'
+  AND (`Field_Collection_Reference_Point` IS NULL OR `Field_Collection_Reference_Point` = ''
+  OR `Field_Collection_Upper_Depth` IS NULL OR `Field_Collection_Upper_Depth` = ''
+  OR `Field_Collection_Lower_Depth` IS NULL OR `Field_Collection_Lower_Depth` = ''
+  OR `Field_Collection_Depth_Units` IS NULL OR `Field_Collection_Depth_Units` = ''
+  OR `Result_Basis` IS NULL OR `Result_Basis` = '')
+")
+
+# Rows with missing water-specific data.
+missingWater <- sqldf("SELECT `New_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`, 
+  `Fraction_Analyzed`, `Result_Value`
+  FROM `eimData`
+  WHERE `Sample_Matrix` = 'Water'
+  AND `Fraction_Analyzed` IS NULL OR `Fraction_Analyzed` NOT IN 
+    ('Total', 'Dissolved', 'Suspended', 'Lab Leachate')
 ")
 
 # Sample Results with missing values
@@ -89,7 +155,8 @@ missingSample <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Co
     `Sample_ID`, `Sample_Composite_Flag`, `Lab_Analysis_Date`, `Result_Lab_Name`
   FROM `eimData`
   WHERE `Field_Collection_Type` = 'Sample'
-    AND `Sample_ID` IS NULL OR `Sample_ID` = ''
+    AND (`Sample_ID` IS NULL OR `Sample_ID` = ''
       OR `Sample_Composite_Flag` IS NULL OR `Sample_Composite_Flag` = ''
       OR `Lab_Analysis_Date` IS NULL OR `Lab_Analysis_Date` = ''
-      OR `Result_Lab_Name` IS NULL OR `Result_Lab_Name` = ''
+      OR `Result_Lab_Name` IS NULL OR `Result_Lab_Name` = '')
+")
