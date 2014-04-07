@@ -12,25 +12,79 @@ eimData <- read.csv("test-data-sw.csv")
 eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
 eimData <- eimData[with(eimData, order(New_Name)), ]
 
+######
 # Visual summaries of the data
+######
+
+#Plot of data qualifiers and locations (too confusing so I mothballed it)
+
+# pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
+# 
+# with(eimData,
+#   xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
+#     layout   = c(3,4),
+#     xlab     = "Date",
+#     ylab     = "Value",
+#     strip    = strip.custom(bg = "gray"),
+#     as.table = TRUE,
+#     par.strip.text = list(
+#       lines  = 3.5,
+#       cex    = .65
+#     ),
+#     scales   = list(y = list(relation = "free")),
+#     panel    = function(x, y, ..., subscripts) {
+#       pch <- c(-48:-57)[Location_ID[subscripts]]
+#       col <- c(7,12,17,30,41,36, 81,94)[Result_Data_Qualifier[subscripts]]
+#       panel.xyplot(x, y, pch=pch, col=col)
+#     },
+#     auto.key = list(columns=3)
+#   )
+# )
+# dev.off()
+
+#Lattice plot of data qualifiers and location IDs.
+
+qualifiersPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
+  data   = eimData, 
+  groups = Result_Data_Qualifier,
+  main   = "All Results \n Data Qualifier Grouping",
+  auto.key = list(columns=3),
+  layout = c(3,4),
+  xlab   = "Date",
+  ylab   = "Value",
+  strip  = strip.custom(bg = "gray"),
+  as.table = TRUE,
+  par.strip.text = list(
+    lines = 3.5,
+    cex   = .65
+  ),
+  type    = c("p"),
+  scales = list(y = list(relation = "free"))
+)
+
+#I'm sure there is a way to reuse these variables; unfortunately, update() doesn't work
+#  when you change the group, and I can't figure out any other way to do it.
+locationsPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
+  data   = eimData, 
+  groups = Location_ID,
+  main   = "All Results \n Location Grouping",
+  auto.key = list(columns=3),
+  layout = c(3,4),
+  xlab   = "Date",
+  ylab   = "Value",
+  strip  = strip.custom(bg = "gray"),
+  as.table = TRUE,
+  par.strip.text = list(
+   lines = 3.5,
+   cex   = .65
+  ),
+  type    = c("p"),
+  scales = list(y = list(relation = "free"))
+)
+
 pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
-print(xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
-        data   = eimData, 
-        groups = Result_Data_Qualifier,
-        auto.key = list(columns=3),
-        layout = c(3,4),
-        xlab   = "Date",
-        ylab   = "Value",
-        strip  = strip.custom(bg = "gray"),
-        as.table = TRUE,
-        par.strip.text = list(
-          lines = 3.5,
-          cex   = .65
-        ),
-        type    = c("p"),
-        scales = list(y = list(relation = "free"))
-        )
-      )
+print(qualifiersPlot)
+print(locationsPlot)
 dev.off()
 
 ######
