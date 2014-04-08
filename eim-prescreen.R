@@ -10,37 +10,16 @@ library(lattice)
 ######
 eimData <- read.csv("test-data-sw.csv")
 eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
+eimData$Collection_Days <- as.Date(eimData$Field_Collection_End_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y")
+eimData$CollectToLab_Days <- (as.Date(eimData$Lab_Analysis_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y"))
+
+t <- table(eimData$CollectToLab_Days)
+
 eimData <- eimData[with(eimData, order(New_Name)), ]
 
 ######
 # Visual summaries of the data
 ######
-
-#Plot of data qualifiers and locations (too confusing so I mothballed it)
-
-# pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
-# 
-# with(eimData,
-#   xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
-#     layout   = c(3,4),
-#     xlab     = "Date",
-#     ylab     = "Value",
-#     strip    = strip.custom(bg = "gray"),
-#     as.table = TRUE,
-#     par.strip.text = list(
-#       lines  = 3.5,
-#       cex    = .65
-#     ),
-#     scales   = list(y = list(relation = "free")),
-#     panel    = function(x, y, ..., subscripts) {
-#       pch <- c(-48:-57)[Location_ID[subscripts]]
-#       col <- c(7,12,17,30,41,36, 81,94)[Result_Data_Qualifier[subscripts]]
-#       panel.xyplot(x, y, pch=pch, col=col)
-#     },
-#     auto.key = list(columns=3)
-#   )
-# )
-# dev.off()
 
 #Lattice plot of data qualifiers and location IDs.
 
@@ -214,3 +193,6 @@ missingSample <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Co
       OR `Lab_Analysis_Date` IS NULL OR `Lab_Analysis_Date` = ''
       OR `Result_Lab_Name` IS NULL OR `Result_Lab_Name` = '')
 ")
+
+# Collection span is not calculable
+missingCollectionSpan <- subset(eimData, is.na(eimData$Collection_Days))
