@@ -6,16 +6,22 @@ library(plyr)
 library(lattice)
 
 ######
-# Import data.  Defaults to a test data set.  Create "New_Name" column to facilitate summaries.
+# Import data.  Defaults to a test data set.  
 ######
 eimData <- read.csv("test-data-sw.csv")
+
+# Create "New_Name" column to facilitate summaries.
 eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
-eimData$Collection_Days <- as.Date(eimData$Field_Collection_End_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y")
-eimData$CollectToLab_Days <- (as.Date(eimData$Lab_Analysis_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y"))
-
-t <- table(eimData$CollectToLab_Days)
-
 eimData <- eimData[with(eimData, order(New_Name)), ]
+
+# Parse out sample timelines
+eimData$Collection_Days <- as.numeric(as.Date(eimData$Field_Collection_End_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y"))
+eimData$CollectToLab_Days <- as.numeric(as.Date(eimData$Lab_Analysis_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y"))
+
+# Pull in supporting datasets
+parameters <- read.csv("parameters.csv")
+qualifiers <- read.csv("qualifiers.csv")
+colnames(qualifiers) <- c("code", "description")
 
 ######
 # Visual summaries of the data
@@ -61,9 +67,18 @@ locationsPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/
   scales = list(y = list(relation = "free"))
 )
 
+holdingPlot <- hist(eimData$CollectToLab_Days, xlab="Days from Sample Start to Lab Analysis", ylab="Number of Results",
+                    main="Sample Holding Time", breaks=100)
+
+collectionPlot <- hist(eimData$Collection_Days, xlab="Days from Sample Start to Sample End", ylab="Number of Results", 
+                       main="Sample Time", breaks=100)
+
+
 pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
 print(qualifiersPlot)
 print(locationsPlot)
+print(holdingPlot)
+print(collectionPlot)
 dev.off()
 
 ######
@@ -121,7 +136,7 @@ missingData <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Study_Spec
 ")
 
 # Rows with result qualifiers requiring detection & reporting limits
-qualifiers <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+qualifiersRequired <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
   `Result_Data_Qualifier`, `Result_Reporting_Limit`, `Result_Reporting_Limit_Type`,
   `Result_Detection_Limit`, `Result_Detection_Limit_Type`    
   FROM `eimData`
@@ -192,6 +207,16 @@ missingSample <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Co
       OR `Sample_Composite_Flag` IS NULL OR `Sample_Composite_Flag` = ''
       OR `Lab_Analysis_Date` IS NULL OR `Lab_Analysis_Date` = ''
       OR `Result_Lab_Name` IS NULL OR `Result_Lab_Name` = '')
+")
+
+# Invalid qualifiers
+wrongQualifier <- sqldf("SELECT `New_Name`, `eimData`.`Location_ID`, `eimData`.`Field_Collection_Start_Date`, `eimData`.`Result_Data_Qualifier`
+  FROM `eimData`
+    LEFT OUTER JOIN `qualifiers`
+    ON `eimData`.`Result_Data_Qualifier` = `qualifiers`.`code`
+  WHERE `qualifiers`.`code` IS NULL
+    AND NOT `Result_Data_Qualifier` = ''
+  ORDER BY `Result_Data_Qualifier` DESC
 ")
 
 # Collection span is not calculable
