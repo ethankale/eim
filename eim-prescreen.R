@@ -4,6 +4,7 @@
 library(sqldf)
 library(plyr)
 library(lattice)
+library(gridExtra)
 
 ######
 # Import data.  Defaults to a test data set.  
@@ -67,19 +68,21 @@ locationsPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/
   scales = list(y = list(relation = "free"))
 )
 
+######
+# Start writing to PDF
+######
+pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
+
 holdingPlot <- hist(eimData$CollectToLab_Days, xlab="Days from Sample Start to Lab Analysis", ylab="Number of Results",
                     main="Sample Holding Time", breaks=100)
 
 collectionPlot <- hist(eimData$Collection_Days, xlab="Days from Sample Start to Sample End", ylab="Number of Results", 
                        main="Sample Time", breaks=100)
 
-
-pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
 print(qualifiersPlot)
 print(locationsPlot)
-print(holdingPlot)
-print(collectionPlot)
-dev.off()
+
+
 
 ######
 # Create tables to summarize data
@@ -221,3 +224,21 @@ wrongQualifier <- sqldf("SELECT `New_Name`, `eimData`.`Location_ID`, `eimData`.`
 
 # Collection span is not calculable
 missingCollectionSpan <- subset(eimData, is.na(eimData$Collection_Days))
+
+######
+# Write tables to PDF.
+######
+
+grid.newpage()
+
+grid.table(wrongQualifier, 
+           gpar.coretext = gpar(fontsize=10), 
+           gpar.coltext  = gpar(fontsize=12),
+           gpar.rowfill  = gpar(fill="white", col="black"), 
+           gpar.colfill  = gpar(fill="white", col="white"),
+           gpar.corefill = gpar(fill="white", col="white"),
+           core.just="left",
+           rows=NULL
+           )
+
+dev.off()
