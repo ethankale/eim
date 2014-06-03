@@ -1,4 +1,12 @@
 ######
+# EIM Prescreen script
+# Intended for data coordinators in WA ECY to use
+# Checks for common violations of business rules in 
+#  data formatted to be submitted to EIM as .csv
+######
+
+
+######
 # Required for the script to work.  Must be installed.
 ######
 library(sqldf)
@@ -9,13 +17,25 @@ library(gridExtra)
 ######
 # Import data.  Defaults to a test data set.  
 ######
-eimData <- read.csv("test-data-sw.csv")
+eimData <- read.csv("Z:/batches/results/G1200280/MaxweltonResultsQ32012thruQ32013.xml_6115.csv")
 
 # Create "New_Name" column to facilitate summaries.
 eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
 eimData <- eimData[with(eimData, order(New_Name)), ]
 
 # Parse out sample timelines
+eimData$Field_Collection_End_Date <- as.character(eimData$Field_Collection_End_Date)
+i = 1
+
+for(endDate in eimData$Field_Collection_End_Date) {
+  if(is.na(endDate)) {
+    eimData$Field_Collection_End_Date[i] <- as.character(eimData$Field_Collection_Start_Date[i])
+  } else {
+    eimData$Field_Collection_End_Date[i] <- endDate
+  }
+  i <- i+1
+}
+
 eimData$Collection_Days <- as.numeric(as.Date(eimData$Field_Collection_End_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y"))
 eimData$CollectToLab_Days <- as.numeric(as.Date(eimData$Lab_Analysis_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y"))
 
@@ -95,15 +115,20 @@ resultCounts <- sqldf("SELECT `Result_Parameter_Name`, `Sample_Matrix`, `Fractio
   GROUP BY `Result_Parameter_Name`, `Sample_Matrix`, `Fraction_Analyzed`, `Result_Method`")
 
 # Summarize subsets of data
+# Remove the NA values for Result_Value, to avoid messing up the summary
+
+cleanData <- eimData[-which(is.na(eimData$Result_Value)), ]
+
 summaries <- ddply(
-  eimData, 
+  cleanData, 
   .(Location_ID, Result_Parameter_Name, Result_Value_Units, Sample_Matrix, Fraction_Analyzed, Result_Method), 
   summarize, 
   count = signif(length(Result_Value), digits = 3),
   mean  = signif(mean(Result_Value), digits = 3),
   max   = signif(max(Result_Value), digits = 3),
   min   = signif(min(Result_Value), digits = 3),
-  q25   = signif(quantile(Result_Value)[2], digits = 3)
+  q25   = signif(quantile(Result_Value)[2], digits = 3),
+  na.rm = TRUE
 )
 
 ######
@@ -111,7 +136,7 @@ summaries <- ddply(
 ######
 
 # Rows with missing required information (required for all Results, not conditionally required)
-missingData <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Study_Specific_Location_ID`, `Field_Collection_Type`, `Field_Collector`,
+missingData <- sqldf("SELECT `Row`, `Result_Parameter_Name`, `Location_ID`, `Study_Specific_Location_ID`, `Field_Collection_Type`, `Field_Collector`,
     `Field_Collection_Start_Date`, `Field_Collection_Start_Time`, `Sample_Matrix`, `Sample_Source`, `Result_Parameter_Name`
     `Result_Value`, `Result_Value_Units`, `Result_Method`
   FROM `eimData`
@@ -139,7 +164,7 @@ missingData <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Study_Spec
 ")
 
 # Rows with result qualifiers requiring detection & reporting limits
-qualifiersRequired <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+qualifiersRequired <- sqldf("SELECT `Row`, `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
   `Result_Data_Qualifier`, `Result_Reporting_Limit`, `Result_Reporting_Limit_Type`,
   `Result_Detection_Limit`, `Result_Detection_Limit_Type`    
   FROM `eimData`
@@ -154,7 +179,7 @@ qualifiersRequired <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Fie
 ")
 
 # Rows with detection limits missing detection limit types
-missingDL <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+missingDL <- sqldf("SELECT `Row`, `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
   `Result_Data_Qualifier`, `Result_Reporting_Limit`, `Result_Reporting_Limit_Type`,
   `Result_Detection_Limit`, `Result_Detection_Limit_Type`    
   FROM `eimData`
@@ -163,7 +188,7 @@ missingDL <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collec
 ")
 
 # Rows flagged as non-detects or estimates that exceed relevent limits
-wrongLimits <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+wrongLimits <- sqldf("SELECT `Row`, `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
   `Result_Data_Qualifier`, `Result_Reporting_Limit`, `Result_Reporting_Limit_Type`,
   `Result_Detection_Limit`, `Result_Detection_Limit_Type`, `Result_Value`
   FROM `eimData`
@@ -172,7 +197,7 @@ wrongLimits <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Coll
 ")
 
 # Rows with missing stormwater-specific data.
-missingStormwater <- sqldf("SELECT `New_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+missingStormwater <- sqldf("SELECT `Row`, `New_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
   `Storm_Event_Qualifier`, `Sample_Collection_Method`, `Result_Value`
   FROM `eimData`
   WHERE `Storm_Event_Qualifier` IS NULL OR `Storm_Event_Qualifier` = ''
@@ -180,7 +205,7 @@ missingStormwater <- sqldf("SELECT `New_Name`, `Location_ID`, `Field_Collection_
 ")
 
 # Rows with missing sediment-specific data.
-missingSediment <- sqldf("SELECT `Result_Parameter_Name`, `Sample_Matrix`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`, 
+missingSediment <- sqldf("SELECT `Row`, `Result_Parameter_Name`, `Sample_Matrix`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`, 
   `Field_Collection_Reference_Point`, `Field_Collection_Upper_Depth`,`Field_Collection_Lower_Depth`,
   `Field_Collection_Depth_Units`, `Result_Basis`, `Sample_Collection_Method`, `Result_Value`
   FROM `eimData`
@@ -193,16 +218,15 @@ missingSediment <- sqldf("SELECT `Result_Parameter_Name`, `Sample_Matrix`, `Loca
 ")
 
 # Rows with missing water-specific data.
-missingWater <- sqldf("SELECT `New_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`, 
+missingWater <- sqldf("SELECT `Row`, `New_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`, 
   `Fraction_Analyzed`, `Result_Value`
   FROM `eimData`
   WHERE `Sample_Matrix` = 'Water'
   AND `Fraction_Analyzed` IS NULL OR `Fraction_Analyzed` NOT IN 
     ('Total', 'Dissolved', 'Suspended', 'Lab Leachate')
 ")
-
 # Sample Results with missing values
-missingSample <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
+missingSample <- sqldf("SELECT `Row`, `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
     `Sample_ID`, `Sample_Composite_Flag`, `Lab_Analysis_Date`, `Result_Lab_Name`
   FROM `eimData`
   WHERE `Field_Collection_Type` = 'Sample'
@@ -213,7 +237,7 @@ missingSample <- sqldf("SELECT `Result_Parameter_Name`, `Location_ID`, `Field_Co
 ")
 
 # Invalid qualifiers
-wrongQualifier <- sqldf("SELECT `New_Name`, `eimData`.`Location_ID`, `eimData`.`Field_Collection_Start_Date`, `eimData`.`Result_Data_Qualifier`
+wrongQualifier <- sqldf("SELECT `Row`, `New_Name`, `eimData`.`Location_ID`, `eimData`.`Field_Collection_Start_Date`, `eimData`.`Result_Data_Qualifier`
   FROM `eimData`
     LEFT OUTER JOIN `qualifiers`
     ON `eimData`.`Result_Data_Qualifier` = `qualifiers`.`code`

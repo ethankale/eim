@@ -6,6 +6,8 @@
 
 # R Project files
 .RData
+*.Rproj
+.rproj.user/
 
 # Byproducts of running scripts
 *.pdf
