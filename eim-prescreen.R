@@ -48,6 +48,8 @@ colnames(qualifiers) <- c("code", "description")
 # Visual summaries of the data
 ######
 
+pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
+
 #Lattice plot of data qualifiers and location IDs.
 
 qualifiersPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
@@ -67,6 +69,7 @@ qualifiersPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m
   type    = c("p"),
   scales = list(y = list(relation = "free"))
 )
+print(qualifiersPlot)
 
 #I'm sure there is a way to reuse these variables; unfortunately, update() doesn't work
 #  when you change the group, and I can't figure out any other way to do it.
@@ -87,22 +90,17 @@ locationsPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/
   type    = c("p"),
   scales = list(y = list(relation = "free"))
 )
-
-######
-# Start writing to PDF
-######
-pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
-
-holdingPlot <- hist(eimData$CollectToLab_Days, xlab="Days from Sample Start to Lab Analysis", ylab="Number of Results",
-                    main="Sample Holding Time", breaks=100)
-
-collectionPlot <- hist(eimData$Collection_Days, xlab="Days from Sample Start to Sample End", ylab="Number of Results", 
-                       main="Sample Time", breaks=100)
-
-print(qualifiersPlot)
 print(locationsPlot)
 
+# How long were the results held in a lab
+holdingPlot <- hist(eimData$CollectToLab_Days, xlab="Days from Sample Start to Lab Analysis", ylab="Number of Results",
+                    main="Sample Holding Time", breaks=100)
+print(holdingPlot)
 
+# How long did it take to complete sampling
+collectionPlot <- hist(eimData$Collection_Days, xlab="Days from Sample Start to Sample End", ylab="Number of Results", 
+                       main="Sample Time", breaks=100)
+print(collectionPlot)
 
 ######
 # Create tables to summarize data
@@ -113,6 +111,13 @@ resultCounts <- sqldf("SELECT `Result_Parameter_Name`, `Sample_Matrix`, `Fractio
   Count(DISTINCT `Location_ID`) AS Locations, Count(`Result_Value`) AS Results
   FROM `eimData`
   GROUP BY `Result_Parameter_Name`, `Sample_Matrix`, `Fraction_Analyzed`, `Result_Method`")
+
+# List of parameters by field collection type
+paramCollectType <- aggregate(eimData$Row, 
+                 list(CollectionType = eimData$Field_Collection_Type, 
+                      ParameterName  = eimData$Result_Parameter_Name
+                      ), 
+                 length)
 
 # Summarize subsets of data
 # Remove the NA values for Result_Value, to avoid messing up the summary
@@ -265,4 +270,18 @@ if (nrow(wrongQualifier) > 0) {
              rows=NULL
              )
 }
+
+if (nrow(paramCollectType) > 0) {
+  grid.newpage()
+  grid.table(paramCollectType, 
+             gpar.coretext = gpar(fontsize=10), 
+             gpar.coltext  = gpar(fontsize=12),
+             gpar.rowfill  = gpar(fill="white", col="black"), 
+             gpar.colfill  = gpar(fill="white", col="white"),
+             gpar.corefill = gpar(fill="white", col="white"),
+             core.just="left",
+             rows=NULL
+  )
+}
+
 dev.off()
