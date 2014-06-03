@@ -253,16 +253,16 @@ missingCollectionSpan <- subset(eimData, is.na(eimData$Collection_Days))
 # Write tables to PDF.
 ######
 
-grid.newpage()
-
-grid.table(wrongQualifier, 
-           gpar.coretext = gpar(fontsize=10), 
-           gpar.coltext  = gpar(fontsize=12),
-           gpar.rowfill  = gpar(fill="white", col="black"), 
-           gpar.colfill  = gpar(fill="white", col="white"),
-           gpar.corefill = gpar(fill="white", col="white"),
-           core.just="left",
-           rows=NULL
-           )
-
+if (nrow(wrongQualifier) > 0) {
+  grid.newpage()
+  grid.table(wrongQualifier, 
+             gpar.coretext = gpar(fontsize=10), 
+             gpar.coltext  = gpar(fontsize=12),
+             gpar.rowfill  = gpar(fill="white", col="black"), 
+             gpar.colfill  = gpar(fill="white", col="white"),
+             gpar.corefill = gpar(fill="white", col="white"),
+             core.just="left",
+             rows=NULL
+             )
+}
 dev.off()
