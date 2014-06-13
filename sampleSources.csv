@@ -1,0 +1,44 @@
+Valid Value,Additional Info
+Indoor Air,
+Outdoor Air,
+Landfill Gas,Ambient landfill gas monitoring.  Not what is vented into a treatment system.
+Soil Gas,Gaseous elements and compounds in the small spaces between particles of the earth and soil
+Animal Tissue,
+Animal Tissue - Lab Exposure,Animal tissue purposfully exposed to specific contaminants in a lab setting
+Plant Tissue,
+Periphyton,"Mixture of algae, cyanobacteria, heterotrophic microbes, and detritus that are attached to submerged surfaces in aquatic ecosystems."
+Freshwater Taxonomy,Taxonomic information about freshwater organisms.  Click here to see help for Benthic Macroinvertebrate Data - Freshwater.
+Salt/Marine Taxonomy,Taxonomic information about salt/marine water organisms.  Click here to see help for Benthic Macroinvertebrate Data - Marine.
+Habitat Metrics,
+Sediment,
+Freshwater Sediment,
+Brackish Sediment,
+Salt/Marine Sediment,
+Freshwater Porewater,Porewater is the water filling the spaces between grains of sediment.
+Brackish Porewater,
+Salt/Marine Porewater,
+Elutriate,Supernatant of a sediment and lab water mixture (this is not porewater).
+Rock/Gravel,
+Soil,
+CSO Outfall ,Combined Sewer Overflow (CSO) outfall
+CSS In-Line ,Combined Sewer System (CSS) in-line
+CSS Catch Basin,Combined Sewer System (CSS) catch basin
+Stormwater BMP Effluent ,"Stormwater, Best Management Practice (BMP) effluent"
+Stormwater BMP Mid ,"Stormwater, Best Management Practice (BMP) treatment zone (like stormwater pond)"
+Stormwater BMP Influent,"Stormwater, Best Management Practice (BMP) influent "
+Stormwater Catch Basin,"Stormwater, catch basin "
+Stormwater In-Line,"Stormwater, in-line conveyance or drainage"
+Stormwater Outfall ,"Stormwater, outfall "
+Stormwater Sheetflow,"Stormwater, sheetflow "
+Precipitation,
+Fresh/Surface Water,
+Brackish Water,
+Salt/Marine Water,
+Groundwater,
+Pit Water,"Standing water at bottom of excavation pit or trench, composed of pooled surface water runoff, groundwater seepage, or both.  Click here to see help for ""Entering Pit Water Data."""
+Precipitation,
+Water Supply,"Indicates treated water, for drinking or industry"
+Industrial Discharge,Discharge from an industrial source (permitted)
+Landfill Leachate,Leachate sampled from a landfill leachate collection system
+Source - Other,"Point source or discharge that is not stormwater, industrial, or WWTP (permitted or non-permitted)"
+WWTP Effluent,Wastewater treatment plant effluent (permitted)
