@@ -3,6 +3,10 @@
 # Intended for data coordinators in WA ECY to use
 # Checks for common violations of business rules in 
 #  data formatted to be submitted to EIM as .csv
+#
+# Assumes the addition of a "Row" column with the 
+#  row number (to allow easy reference back to orignal
+#  dataset.)
 ######
 
 
@@ -17,7 +21,7 @@ library(gridExtra)
 ######
 # Import data.  Defaults to a test data set.  
 ######
-eimData <- read.csv("Z:/batches/results/G1200280/MaxweltonResultsQ32012thruQ32013.xml_6115.csv")
+eimData <- read.csv("Z:/batches/results/G1300075/Ebey'sResults2013Q1-3.xls.xml_1166.csv")
 
 # Create "New_Name" column to facilitate summaries.
 eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
@@ -41,8 +45,11 @@ eimData$CollectToLab_Days <- as.numeric(as.Date(eimData$Lab_Analysis_Date, "%m/%
 
 # Pull in supporting datasets
 parameters <- read.csv("parameters.csv")
+
 qualifiers <- read.csv("qualifiers.csv")
 colnames(qualifiers) <- c("code", "description")
+
+sampleSources <- read.csv("sampleSources.csv")
 
 ######
 # Visual summaries of the data
@@ -50,7 +57,7 @@ colnames(qualifiers) <- c("code", "description")
 
 pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
 
-#Lattice plot of data qualifiers and location IDs.
+# Lattice plot of data qualifiers and location IDs.
 
 qualifiersPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
   data   = eimData, 
@@ -71,7 +78,7 @@ qualifiersPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m
 )
 print(qualifiersPlot)
 
-#I'm sure there is a way to reuse these variables; unfortunately, update() doesn't work
+# I'm sure there is a way to reuse these variables; unfortunately, update() doesn't work
 #  when you change the group, and I can't figure out any other way to do it.
 locationsPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
   data   = eimData, 
@@ -240,6 +247,18 @@ missingSample <- sqldf("SELECT `Row`, `Result_Parameter_Name`, `Location_ID`, `F
       OR `Lab_Analysis_Date` IS NULL OR `Lab_Analysis_Date` = ''
       OR `Result_Lab_Name` IS NULL OR `Result_Lab_Name` = '')
 ")
+
+# Sample results with missing sample IDs or composite flags
+samples   <- eimData[which(eimData$Field_Collection_Type == "Sample"), ]
+missingID <- samples[which((samples$Sample_ID == "") || is.na(samples$Sample_ID)), ]
+missingComposite <- samples[which((samples$Sample_Composite_Flag == "") || is.na(samples$Sample_Composite_Flag)), ]
+
+# Missing sample matrix or sample source values
+missingMatrix <- eimData[which((eimData$Sample_Matrix == "") || is.na(eimData$Sample_Matrix)), ]
+wrongSource   <- eimData[which(!(eimData$Sample_Source %in% sampleSources$Valid.Value)), ]
+
+# List of sample source/location combinations (should be 1 to 1)
+locationSource <- aggregate(Row ~ Location_ID + Sample_Source, data = eimData, length)
 
 # Invalid qualifiers
 wrongQualifier <- sqldf("SELECT `Row`, `New_Name`, `eimData`.`Location_ID`, `eimData`.`Field_Collection_Start_Date`, `eimData`.`Result_Data_Qualifier`
