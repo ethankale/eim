@@ -23,6 +23,9 @@ library(gridExtra)
 ######
 eimData <- read.csv("Z:/batches/results/G1300075/Ebey'sResults2013Q1-3.xls.xml_1166.csv")
 
+# Optional - handy for my particular setup.
+setwd("Z:/ecy-wa-eim-preload")
+
 # Create "New_Name" column to facilitate summaries.
 eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
 eimData <- eimData[with(eimData, order(New_Name)), ]
@@ -259,6 +262,7 @@ wrongSource   <- eimData[which(!(eimData$Sample_Source %in% sampleSources$Valid.
 
 # List of sample source/location combinations (should be 1 to 1)
 locationSource <- aggregate(Row ~ Location_ID + Sample_Source, data = eimData, length)
+locationSource <- locationSource[order(locationSource$Location_ID), ]
 
 # Invalid qualifiers
 wrongQualifier <- sqldf("SELECT `Row`, `New_Name`, `eimData`.`Location_ID`, `eimData`.`Field_Collection_Start_Date`, `eimData`.`Result_Data_Qualifier`
