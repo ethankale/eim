@@ -55,7 +55,7 @@ colnames(qualifiers) <- c("code", "description")
 sampleSources <- read.csv("sampleSources.csv")
 
 ######
-# Visual summaries of the data
+# Visual summaries of the data (PDF)
 ######
 
 pdf("latticePlot.pdf", width=8, height=10.5, paper="letter")
