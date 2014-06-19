@@ -21,6 +21,8 @@ library(gridExtra)
 ######
 # Import data.  Defaults to a test data set.  
 ######
+
+#file.choose()
 eimData <- read.csv("Z:/batches/results/G1300075/Ebey'sResults2013Q1-3.xls.xml_1166.csv")
 
 # Optional - handy for my particular setup.
@@ -130,21 +132,11 @@ paramCollectType <- aggregate(eimData$Row,
                  length)
 
 # Summarize subsets of data
-# Remove the NA values for Result_Value, to avoid messing up the summary
 
-cleanData <- eimData[-which(is.na(eimData$Result_Value)), ]
-
-summaries <- ddply(
-  cleanData, 
-  .(Location_ID, Result_Parameter_Name, Result_Value_Units, Sample_Matrix, Fraction_Analyzed, Result_Method), 
-  summarize, 
-  count = signif(length(Result_Value), digits = 3),
-  mean  = signif(mean(Result_Value), digits = 3),
-  max   = signif(max(Result_Value), digits = 3),
-  min   = signif(min(Result_Value), digits = 3),
-  q25   = signif(quantile(Result_Value)[2], digits = 3),
-  na.rm = TRUE
-)
+summaries <- aggregate(Result_Value ~ Location_ID + Result_Parameter_Name + Result_Value_Units + Sample_Matrix + 
+                         Fraction_Analyzed + Result_Method, 
+                       data = eimData, 
+                       length)
 
 ######
 # Create tables of rows with missing/possibly wrong values

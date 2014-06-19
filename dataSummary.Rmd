@@ -1,0 +1,156 @@
+---
+title: "EIM Prescreen Result"
+author: "Nat Kale"
+date: "Wednesday, June 18, 2014"
+output:
+  word_document:
+    fig_height: 8
+    fig_width: 6.5
+    pandoc_args: [
+      "--reference-docx", "format.docx"
+    ]    
+
+---
+
+
+```{r, message=FALSE, echo=FALSE}
+inputFile <- "Z:/batches/results/G1300075/Ebey'sResults2013Q1-3.xls.xml_1166.csv"
+
+eimData <- read.csv(inputFile)
+
+library(sqldf)
+library(plyr)
+library(lattice)
+#library(gridExtra)
+
+# Optional - handy for my particular setup.
+setwd("Z:/ecy-wa-eim-preload")
+
+# Create "New_Name" column to facilitate summaries.
+eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
+eimData <- eimData[with(eimData, order(New_Name)), ]
+
+# Parse out sample timelines
+eimData$Field_Collection_End_Date <- as.character(eimData$Field_Collection_End_Date)
+i = 1
+
+for(endDate in eimData$Field_Collection_End_Date) {
+  if(is.na(endDate)) {
+    eimData$Field_Collection_End_Date[i] <- as.character(eimData$Field_Collection_Start_Date[i])
+  } else {
+    eimData$Field_Collection_End_Date[i] <- endDate
+  }
+  i <- i+1
+}
+
+eimData$Collection_Days <- as.numeric(as.Date(eimData$Field_Collection_End_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y"))
+eimData$CollectToLab_Days <- as.numeric(as.Date(eimData$Lab_Analysis_Date, "%m/%d/%Y") - as.Date(eimData$Field_Collection_Start_Date, "%m/%d/%Y"))
+
+# Pull in supporting datasets
+parameters <- read.csv("parameters.csv")
+
+qualifiers <- read.csv("qualifiers.csv")
+colnames(qualifiers) <- c("code", "description")
+
+sampleSources <- read.csv("sampleSources.csv")
+
+```
+
+This is an **automatically generated** review of data submitted to EIM.
+
+```{r, echo=FALSE}
+inputFile
+```
+
+#Data Summary
+
+##Parameters
+```{r, echo=FALSE, results='asis'}
+summaryParameter <- setNames(aggregate(Result_Value ~ Result_Parameter_Name + Result_Value_Units + Sample_Matrix + 
+                                  Fraction_Analyzed + Result_Method, 
+                                data = eimData, 
+                                length),
+                      c("Parameter", "Units", "Matrix", "Fraction", "Method", "Count")
+                      )
+
+knitr::kable(summaryParameter)
+````
+
+##Collection Types
+```{r, echo=FALSE, results='asis'}
+paramCollectType <- aggregate(eimData$Row, 
+                 list(CollectionType = eimData$Field_Collection_Type, 
+                      ParameterName  = eimData$Result_Parameter_Name
+                      ), 
+                 length)
+paramCollectType <- setNames(paramCollectType, c("Collection Type", "Parameter", "Count"))
+knitr::kable(paramCollectType)
+```
+
+
+##Locations
+```{r, echo=FALSE, results='asis'}
+summaryLocation <- setNames(aggregate(Result_Value ~ Location_ID, 
+                                data = eimData, 
+                                length),
+                      c("Location", "Count")
+                      )
+
+knitr::kable(summaryLocation)
+````
+
+
+#Summary Plots
+
+```{r, echo=FALSE}
+qualifiersPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
+  data   = eimData, 
+  groups = Result_Data_Qualifier,
+  main   = "All Results \n Data Qualifier Grouping",
+  auto.key = list(columns=3),
+  layout = c(3,4),
+  xlab   = "Date",
+  ylab   = "Value",
+  strip  = strip.custom(bg = "gray"),
+  as.table = TRUE,
+  par.strip.text = list(
+    lines = 3.5,
+    cex   = .65
+  ),
+  type    = c("p"),
+  scales = list(y = list(relation = "free"))
+)
+
+print(qualifiersPlot)
+
+```
+
+```{r, echo=FALSE}
+# I'm sure there is a way to reuse these variables; unfortunately, update() doesn't work
+#  when you change the group, and I can't figure out any other way to do it.
+locationsPlot <- xyplot(Result_Value ~ as.Date(Field_Collection_Start_Date, "%m/%d/%Y") | New_Name,
+  data   = eimData, 
+  groups = Location_ID,
+  main   = "All Results \n Location Grouping",
+  auto.key = list(columns=3),
+  layout = c(3,4),
+  xlab   = "Date",
+  ylab   = "Value",
+  strip  = strip.custom(bg = "gray"),
+  as.table = TRUE,
+  par.strip.text = list(
+   lines = 3.5,
+   cex   = .65
+  ),
+  type    = c("p"),
+  scales = list(y = list(relation = "free"))
+)
+print(locationsPlot)
+```
+
+```{r, echo=FALSE}
+# How long were the results held in a lab
+holdingPlot <- hist(eimData$CollectToLab_Days, xlab="Days from Sample Start to Lab Analysis", ylab="Number of Results",
+                    main="Sample Holding Time", breaks=100)
+print(holdingPlot)
+```
