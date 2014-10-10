@@ -1,0 +1,48 @@
+<html>
+<head>
+
+</head>
+
+<body>
+
+<script type="text/javascript" src="js/papaparse.js"></script>
+
+
+
+<h1>Load a file</h1>
+
+<input id="fileItem" type="file">
+
+<script type="text/javascript">
+
+    var data = [];
+
+    var parseCSV = function(){ 
+        var fileInput = document.querySelector("#fileItem");
+        var file = fileInput.files[0];
+
+        Papa.parse(file, {
+            config: {
+                     header: true,
+                     worker: true
+                     },
+            before: function(file) {
+                        console.log("Parsing file...", file);
+            },
+            error: function(err, file) {
+                        console.log("Error:", err, file);
+            },
+            complete: function(results) {
+                        data = results;
+                        console.log("Row count:" + results.data.length); 
+            }
+
+        });
+    }
+    
+    // set the input element onchange to call pullfiles
+    document.querySelector("#fileItem").onchange = parseCSV;
+
+</script>
+
+</body>
