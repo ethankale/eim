@@ -1,29 +1,61 @@
 <html>
 <head>
 
+<style>
+
+#uploadedData tr td {
+    font-size: 0.75em;
+    color: gray;
+}
+
+td.error {
+    background-color: yellow;
+}
+
+
+#uploadedData tr.error td {
+    font-size: 0.75em;
+    color: black;
+}
+
+</style>
+
 </head>
 
 <body>
 
 <script type="text/javascript" src="js/papaparse.js"></script>
+<script type="text/javascript" src="js/jquery-1.11.1.js"></script>
+<script type="text/javascript" src="js/eimValidator.js"></script>
 
 
+<h1>EIM Batch Results Validator</h1>
 
-<h1>Load a file</h1>
+<p id="status">Click below to review a .csv file of results values against EIM data rules.</p>
+<br />
 
 <input id="fileItem" type="file">
+<br /><hr /><br />
+
+<div id="uploadedData"></div>
+
+<!-- Scripty stuff -->
 
 <script type="text/javascript">
 
-    var data = [];
+    var data     = [];
+    var headings = [];
 
     var parseCSV = function(){ 
         var fileInput = document.querySelector("#fileItem");
         var file = fileInput.files[0];
+        
+        
+        $("#status").text("Importing and reviewing file " + file.name + "...");
 
         Papa.parse(file, {
             config: {
-                     header: true,
+                     header: false,
                      worker: true
                      },
             before: function(file) {
@@ -33,8 +65,56 @@
                         console.log("Error:", err, file);
             },
             complete: function(results) {
+                        
                         data = results;
                         console.log("Row count:" + results.data.length); 
+                        
+                        // Create header row w/ labels, and a list of labels
+                        
+                        $("#uploadedData").append('<table id="dataTable">')
+                        $("#dataTable").append('<tr id="header">')
+                        $("#header").append('<th>Errors</th>')
+                        
+                        for (var i=0; i<data.data[0].length; i++) {
+                            $("#header").append("<th>" + data.data[0][i] + "</th>");
+                            headings.push(data.data[0][i]);
+                        }
+                        
+                        // Go through each row, add DOM element & check for errors
+                        
+                        for (var i=1; i<data.data.length; i++) {
+                            $("#dataTable").append('<tr id="row' + i + '">');
+                            $("#row" + i).append('<td class="errorCount">');
+                            
+                            var rowErrors = []
+                            
+                            for (var j=0; j<data.data[i].length; j++) {
+                                field = headings[j]
+                                $("#row" + i).append('<td class="' + field + '">' + data.data[i][j] + "</td>");
+                                
+                                // Find all errors for the field (cell) we're on, add to row errors
+                                
+                                var fieldError = eimValidValue(field, data.data[i][j])
+                                
+                                if (fieldError.length > 0) {
+                                    rowErrors.push([field, fieldError]);
+                                    console.log(fieldError);
+                                    $("#row" + i + " ." + field).addClass("error");
+                                    $("#row" + i + " .errorCount").addClass("error");
+                                    
+                                    $("#row" + i + " ." + field).prop("title", fieldError);
+                                }
+                            }
+                            
+                            $("#row" + i + " .errorCount").text(rowErrors.length)
+                            
+                            if (rowErrors.length > 0) {
+                                $("#row" + i).addClass("error");
+                            }
+                            
+                        }
+                        
+                        $("#status").text("Import complete!");
             }
 
         });
