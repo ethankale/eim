@@ -11,22 +11,6 @@
     <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
     <link rel="stylesheet" href="css\eim_datacheck.css">
 
-    <style>
-        #uploadedData tr td {
-            font-size: 0.75em;
-            color: gray;
-        }
-
-        td.error {
-            background-color: yellow;
-        }
-
-
-        #uploadedData tr.error td {
-            font-size: 0.75em;
-            color: black;
-        }
-    </style>
 </head>
 <body>
 
@@ -43,26 +27,17 @@
                     <input id="fileItem" type="file" placeholder="Select a batch .csv file">
                 </form>
             </li>
+            <li class="pure-menu-item"> <a href="#" class="pure-menu-link">Errors</a> </li>
+            <li class="pure-menu-item"> <a href="#" class="pure-menu-link">Summary</a> </li>
+            <li class="pure-menu-item"> <a href="#" class="pure-menu-link">Graphs</a> </li>
         </div>
     </div>
 
-    <div class="pure-u-1-6">
-        <h2>Sidebar</h2>
-        <p>Error Summary</p>
-        <p>Parameter Summary</p>
-        <p>Graphs</p>
-        
-    </div>
     
     <div class="pure-u-1-6">
-        <h2>Menu 2</h2>
-        <p>Param 1</p>
-        <p>Param 2</p>
-        
     </div>
     
-    <div class="pure-u-2-3">
-        <h2>Data goes here</h2>
+    <div class="pure-u-5-6">
         <div id="uploadedData"></div>
     </div>
     
