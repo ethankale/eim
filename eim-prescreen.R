@@ -23,10 +23,10 @@ library(gridExtra)
 ######
 
 #file.choose()
-eimData <- read.csv("Z:/batches/results/G1300075/Ebey'sResults2013Q1-3.xls.xml_1166.csv")
+eimData <- read.csv("Z:/batches/results/Sediment data May 2012 through May 2014-Data Sheet.csv_43182.csv")
 
 # Optional - handy for my particular setup.
-setwd("Z:/ecy-wa-eim-preload")
+setwd("Z:/eim")
 
 # Create "New_Name" column to facilitate summaries.
 eimData$New_Name <- apply(eimData, 1, function(row) paste(row["Result_Parameter_Name"], row["Sample_Matrix"], row["Result_Value_Units"], sep="\n"))
@@ -229,8 +229,8 @@ missingWater <- sqldf("SELECT `Row`, `New_Name`, `Location_ID`, `Field_Collectio
   `Fraction_Analyzed`, `Result_Value`
   FROM `eimData`
   WHERE `Sample_Matrix` = 'Water'
-  AND `Fraction_Analyzed` IS NULL OR `Fraction_Analyzed` NOT IN 
-    ('Total', 'Dissolved', 'Suspended', 'Lab Leachate')
+  AND (`Fraction_Analyzed` IS NULL OR `Fraction_Analyzed` NOT IN 
+    ('Total', 'Dissolved', 'Suspended', 'Lab Leachate'))
 ")
 # Sample Results with missing values
 missingSample <- sqldf("SELECT `Row`, `Result_Parameter_Name`, `Location_ID`, `Field_Collection_Start_Date`, `Field_Collection_Start_Time`,
