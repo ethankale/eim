@@ -27,14 +27,15 @@
                     <input id="fileItem" type="file" placeholder="Select a batch .csv file">
                 </form>
             </li>
-            <li class="pure-menu-item"> <a href="#" class="pure-menu-link">Errors</a> </li>
-            <li class="pure-menu-item"> <a href="#" class="pure-menu-link">Summary</a> </li>
-            <li class="pure-menu-item"> <a href="#" class="pure-menu-link">Graphs</a> </li>
+            <li id="menu-errors"  class="pure-menu-item"> <a href="#" class="pure-menu-link">Errors</a> </li>
+            <li id="menu-summary" class="pure-menu-item"> <a href="#" class="pure-menu-link">Summary</a> </li>
+            <li id="menu-graphs"  class="pure-menu-item"> <a href="#" class="pure-menu-link">Graphs</a> </li>
         </div>
     </div>
 
     
     <div class="pure-u-1-6">
+        <div id="sidebar"></div>
     </div>
     
     <div class="pure-u-5-6">
@@ -47,12 +48,10 @@
 <!-- Scripty stuff -->
 <script type="text/javascript" src="js/papaparse.js"></script>
 <script type="text/javascript" src="js/jquery-1.11.1.js"></script>
+<script type="text/javascript" src="js/lodash.min.js"></script>
+
+
 <script type="text/javascript" src="js/eimValidator.js"></script>
-
-<script>
-
-</script>
-
 <script type="text/javascript" src="js/eim_datacheck.js"></script>
 
 </body>

@@ -2,16 +2,34 @@
     letter-spacing: 0em;
 }
 
-ul#errorList {
+.pure-menu-selected {
+    border-bottom-style: dotted;
+    border-bottom-width: 2px;
+}
+
+ul {
     list-style-type: none;
 }
 
-ul#errorList li {
-    padding-top: 3px;
-    padding-bottom: 3px;
+ul li {
+    padding-top: 6px;
+    padding-bottom: 6px;
     color: gray;
 }
 
-ul#errorList li:hover {
+ul li:hover {
     color: black;
+    list-style-type: disc;
+}
+
+ul#errorList li p.rowName {
+    padding: 0px;
+    margin: 3px 0px 0px 0px;
+    color: gray;
+    font-size: small;
+}
+
+.count {
+    font-size: 70%;
+    color: gray;
 }
