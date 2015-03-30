@@ -23,13 +23,13 @@
 
         <div class="pure-menu-list">
             <li class="pure-menu-item">
-                <form class="pure-form pure-form-stacked">
-                    <input id="fileItem" type="file" placeholder="Select a batch .csv file">
+                <form class="pure-form">
+                    <input id="fileItem" class="pure-input-1" type="file" placeholder="Select a batch .csv file">
                 </form>
             </li>
             <li id="menu-errors"  class="pure-menu-item"> <a href="#" class="pure-menu-link">Errors</a> </li>
             <li id="menu-summary" class="pure-menu-item"> <a href="#" class="pure-menu-link">Summary</a> </li>
-            <li id="menu-graphs"  class="pure-menu-item"> <a href="#" class="pure-menu-link">Graphs</a> </li>
+            <li id="menu-graphs"  class="pure-menu-item pure-menu-disabled"> <a href="#" class="pure-menu-link">Graphs</a> </li>
         </div>
     </div>
 
@@ -49,6 +49,7 @@
 <script type="text/javascript" src="js/papaparse.js"></script>
 <script type="text/javascript" src="js/jquery-1.11.1.js"></script>
 <script type="text/javascript" src="js/lodash.min.js"></script>
+<script type="text/javascript" src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
 
 <script type="text/javascript" src="js/eimValidator.js"></script>

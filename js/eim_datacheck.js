@@ -4,59 +4,90 @@
 
 
 var data   = [];
+var errors = [];
 
 var monthNames = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
 ];
 
-var drawErrors = function() {
-    
-    // Clear out the main data panel and add new containers
-    $("#sidebar").empty();
-    $("#uploadedData").empty();
-    $("li#menu-summary").removeClass("pure-menu-selected");
-    
-    $("#uploadedData").append("<div id='errorSummary'></div>");
-    $("#uploadedData").append("<ul id='errorList'></ul>");
-    $("li#menu-errors").addClass("pure-menu-selected");
+var findErrors = function(data) {
     
     // Loop through each row in the EIM template
     var i = 0;
-    var errors = [];
     
-    for (i; i<data.data.length; i++) {
+    for (i; i<data.length; i++) {
         
-        var dateOfCollection = new Date(data.data[i]["Field_Collection_Start_Date"]);
+        var dateOfCollection = new Date(data[i]["Field_Collection_Start_Date"]);
         
-        var rowName = ["Site " + data.data[i]["Location_ID"],
+        var rowName = ["Site " + data[i]["Location_ID"],
             monthNames[dateOfCollection.getMonth()] + " " + dateOfCollection.getDay() + ", " + dateOfCollection.getFullYear(),
-            data.data[i]["Fraction_Analyzed"] + " " + data.data[i]["Result_Parameter_Name"] + " in " + data.data[i]["Sample_Matrix"]
+            data[i]["Fraction_Analyzed"] + " " + data[i]["Result_Parameter_Name"] + " in " + data[i]["Sample_Matrix"]
             ].join(" | "); 
         
         // Loop through each column in the row
-        for (var property in data.data[i]) {
-            if (data.data[i].hasOwnProperty(property)) {
+        for (var property in data[i]) {
+            if (data[i].hasOwnProperty(property)) {
             
                 // Check a field in a row for errors (see eimValidator.js)
-                var fieldError = eimValidValue(property, data.data[i][property]);
+                var fieldError = eimValidValue(property, data[i][property]);
                 
                 if (fieldError.length > 0) {
-                    errors.push(fieldError);
-                    var tableLocation = "<ins>Row " + i + ", Column " + property + "</ins>";
-                    $("#errorList").append("<li class='error'>" + tableLocation + " - " + fieldError 
-                        + "<p class='rowName'>" + rowName + "</p></li>");
+                
+                    var tableLocation = "<ins>Row " + (i+1) + ", Column " + property + "</ins>";
+                    errors.push({
+                        "fieldError":    fieldError,
+                        "property":      property, 
+                        "tableLocation": tableLocation, 
+                        "rowName":       rowName
+                    });
                 };
             };
         };
     };
+}
+
+var drawErrors = function() {
     
-    // Update the menu and status div
+    if (data == false) {
+        alert("Upload an EIM file to examine first!");
+    } else {
     
-    $("#errorSummary").append("<p>There were <strong>" + errors.length + "</strong> errors in <strong>"
-        + data.data.length + "</strong> rows. </p>");
+        // Clear out the main data panel and add new containers
+        $("#sidebar").empty();
+        $("#uploadedData").empty();
+        $("li#menu-summary").removeClass("pure-menu-selected");
+        
+        $("#uploadedData").append("<h2>Details</h2>");
+        $("#uploadedData").append("<ul id='errorList'></ul>");
+        
+        $("#sidebar").append("<h2>Summary</h2");
+        $("#sidebar").append("<ul id='errorSummary'></ul>");
+        
+        $("li#menu-errors").addClass("pure-menu-selected");
+        
+        // Loop through each row in the EIM template
+        
+        for (var i=0; i<errors.length; i++) {
+            
+            $("#errorList").append("<li class='error'>" 
+                + errors[i]["tableLocation"] + " - "
+                + errors[i]["fieldError"]    + "<p class='rowName'>" 
+                + errors[i]["rowName"]       + "</p></li>"
+            );
+        };
+        
+        // Update the menu and status div
+        
+        $("#errorSummary").append("<li><strong>" + errors.length + "</strong> total errors.</li>");
+        $("#errorSummary").append("<li><strong>" + data.data.length + "</strong> total rows.</li>");
+    };
 };
 
 var parseCSV = function(){ 
+    
+    $("#uploadedData").empty();
+    $("#sidebar").empty();
+    
     var fileInput = document.querySelector("#fileItem");
     var file = fileInput.files[0];
 
@@ -69,11 +100,13 @@ var parseCSV = function(){
         },
         
         complete: function(results) {
-        
-            data = results; 
+            
+            errors  = [];
+            data    = results; 
             
             // Go through each row & check for errors
-            drawErrors();
+            findErrors(results.data);
+            drawErrors(errors);
             
         }
     });
@@ -81,23 +114,37 @@ var parseCSV = function(){
 
 var summarizeData = function() {
     
-    // State changes - empty out divs & change menu
-    $("#uploadedData").empty();
-    $("#sidebar").empty();
-    $("li#menu-errors").removeClass("pure-menu-selected");
-    
-    $("#sidebar").append("<h2>Parameters</h2");
-    $("#sidebar").append("<ul id='parameters'></ul>");
-    $("li#menu-summary").addClass("pure-menu-selected");
-    
-    var parameterCounts = _.countBy(data.data, function(n) { return n.Result_Parameter_Name });
-    
-    for (var parameter in parameterCounts) {
-        if (parameterCounts.hasOwnProperty(parameter)) {
-            $("ul#parameters").append("<li>" + parameter + " <span class='count'>(" + parameterCounts[parameter] + ")</span></li>");
+    if (data == false) {
+        alert("Upload an EIM file to examine first!");
+    } else {
+        // State changes - empty out divs & change menu
+        $("#uploadedData").empty();
+        $("#sidebar").empty();
+        $("li#menu-errors").removeClass("pure-menu-selected");
+        
+        $("#sidebar").append("<h2>Parameters</h2");
+        $("#sidebar").append("<ul id='parameters'></ul>");
+        
+        $("#uploadedData").append("<h2>Details</h2>"
+            + "<p>Select a parameter to the left.</p>"
+        );
+        
+        $("li#menu-summary").addClass("pure-menu-selected");
+        
+        var parameterCounts = _.countBy(data.data, "Result_Parameter_Name");
+        var parameterCounts = _.chain(data.data).countBy("Result_Parameter_Name")
+            .pairs()
+            .sortBy(0)
+            .value();
+        
+        for (var i=0; i<parameterCounts.length; i++) {
+            
+            $("ul#parameters").append("<li><a href='#'>" 
+                + parameterCounts[i][0] + "</a> <span class='count'>(" 
+                + parameterCounts[i][1] + ")</span></li>"
+            );
         };
     };
-    
 }
 
 $("#fileItem").change(parseCSV);
