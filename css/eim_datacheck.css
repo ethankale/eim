@@ -22,6 +22,22 @@ ul li:hover {
     list-style-type: disc;
 }
 
+ul li a:link {
+    color: gray;
+}
+
+ul li a:visited {
+    color: gray;
+}
+
+ul li a:active {
+    color: gray;
+}
+
+ul li a:hover {
+    color: black;
+}
+
 ul#errorList li p.rowName {
     padding: 0px;
     margin: 3px 0px 0px 0px;
@@ -33,3 +49,9 @@ ul#errorList li p.rowName {
     font-size: 70%;
     color: gray;
 }
+
+div#uploadedData {
+    padding: 0px 0px 0px 5px;
+    margin:  0px 0px 0px 5px;
+}
+

@@ -83,6 +83,71 @@ var drawErrors = function() {
     };
 };
 
+var summarizeData = function() {
+    
+    if (data == false) {
+        alert("Upload an EIM file to examine first!");
+    } else {
+        // State changes - empty out divs & change menu
+        $("#uploadedData").empty();
+        $("#sidebar").empty();
+        $("li#menu-errors").removeClass("pure-menu-selected");
+        
+        $("#sidebar").append("<h2>Parameters</h2");
+        $("#sidebar").append("<ul id='parameters'></ul>");
+        
+        $("#uploadedData").append("<h2>Details</h2>"
+            + "<div id='details'><p>Select a parameter to the left.</p></div>"
+        );
+        
+        $("li#menu-summary").addClass("pure-menu-selected");
+        
+        var parameterCounts = _.countBy(data.data, "Result_Parameter_Name");
+        var parameterCounts = _.chain(data.data).countBy("Result_Parameter_Name")
+            .pairs()
+            .sortBy(0)
+            .value();
+        
+        for (var i=0; i<parameterCounts.length; i++) {
+            
+            $("ul#parameters").append("<li><a href='#' data-parameterName='" 
+                + parameterCounts[i][0] + "'>" 
+                + parameterCounts[i][0] + "</a> <span class='count'>(" 
+                + parameterCounts[i][1] + ")</span></li>"
+            );
+        };
+        
+        $("ul#parameters li a").click(function() {
+            displayParameterDetails(this);
+        });
+    };
+}
+
+var displayParameterDetails = function(elem) {
+    //alert($(elem).attr("data-parameterName"));
+    
+    $("div#details").empty();
+    $("div#uploadedData h2").empty();
+    
+    var theParam = $(elem).attr("data-parameterName");
+    var filteredData = _.filter(data.data, 'Result_Parameter_Name', theParam);
+    
+    var getVal = function(result) {
+        return parseFloat(result.Result_Value);
+    }
+    
+    var max = _.max(filteredData, getVal).Result_Value;
+    var min = _.min(filteredData, getVal).Result_Value;
+    
+    $("div#uploadedData h2").append("Details (" + theParam + ")");
+    $("div#details").append("Range is from <strong>"
+        + min + "</strong> to <strong>"
+        + max + "</strong>."
+    );
+    
+    
+};
+
 var parseCSV = function(){ 
     
     $("#uploadedData").empty();
@@ -112,41 +177,7 @@ var parseCSV = function(){
     });
 };
 
-var summarizeData = function() {
-    
-    if (data == false) {
-        alert("Upload an EIM file to examine first!");
-    } else {
-        // State changes - empty out divs & change menu
-        $("#uploadedData").empty();
-        $("#sidebar").empty();
-        $("li#menu-errors").removeClass("pure-menu-selected");
-        
-        $("#sidebar").append("<h2>Parameters</h2");
-        $("#sidebar").append("<ul id='parameters'></ul>");
-        
-        $("#uploadedData").append("<h2>Details</h2>"
-            + "<p>Select a parameter to the left.</p>"
-        );
-        
-        $("li#menu-summary").addClass("pure-menu-selected");
-        
-        var parameterCounts = _.countBy(data.data, "Result_Parameter_Name");
-        var parameterCounts = _.chain(data.data).countBy("Result_Parameter_Name")
-            .pairs()
-            .sortBy(0)
-            .value();
-        
-        for (var i=0; i<parameterCounts.length; i++) {
-            
-            $("ul#parameters").append("<li><a href='#'>" 
-                + parameterCounts[i][0] + "</a> <span class='count'>(" 
-                + parameterCounts[i][1] + ")</span></li>"
-            );
-        };
-    };
-}
-
+// Register onclick events & generally set up the document
 $("#fileItem").change(parseCSV);
 $("#menu-summary a").click(summarizeData);
 $("#menu-errors a").click(drawErrors);
