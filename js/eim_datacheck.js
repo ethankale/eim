@@ -5,6 +5,7 @@
 
 var data   = [];
 var errors = [];
+var errorGroups = [];
 
 var monthNames = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
@@ -43,9 +44,18 @@ var findErrors = function(data) {
                 };
             };
         };
+        
+        errorGroups = _.chain(errors)
+            .countBy("property")
+            .pairs()
+            .sortBy(0)
+            .value();
+        
     };
 }
 
+//  Currently relies on global variables;  not great,
+//    but a lot easier to debug.
 var drawErrors = function() {
     
     if (data == false) {
@@ -60,8 +70,7 @@ var drawErrors = function() {
         $("#uploadedData").append("<h2>Details</h2>");
         $("#uploadedData").append("<ul id='errorList'></ul>");
         
-        $("#sidebar").append("<h2>Summary</h2");
-        $("#sidebar").append("<ul id='errorSummary'></ul>");
+
         
         $("li#menu-errors").addClass("pure-menu-selected");
         
@@ -76,10 +85,23 @@ var drawErrors = function() {
             );
         };
         
-        // Update the menu and status div
+        // Update the sidebar
+        
+        $("#sidebar").append("<h2>Summary</h2");
+        $("#sidebar").append("<ul id='errorSummary'></ul>");
         
         $("#errorSummary").append("<li><strong>" + errors.length + "</strong> total errors.</li>");
         $("#errorSummary").append("<li><strong>" + data.data.length + "</strong> total rows.</li>");
+        
+        $("#sidebar").append("<h3>Error Types</h3>");
+        $("#sidebar").append("<ul id='errorGroups'></ul>");
+        
+        for (var i=0; i<errorGroups.length; i++) {
+            $("#errorGroups").append("<li>" + 
+                errorGroups[i][0] + "<span class='count'> (" +
+                errorGroups[i][1] + ")</span></li>"
+            );
+        };
     };
 };
 
@@ -102,7 +124,6 @@ var summarizeData = function() {
         
         $("li#menu-summary").addClass("pure-menu-selected");
         
-        var parameterCounts = _.countBy(data.data, "Result_Parameter_Name");
         var parameterCounts = _.chain(data.data).countBy("Result_Parameter_Name")
             .pairs()
             .sortBy(0)
