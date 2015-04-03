@@ -55,3 +55,9 @@ div#uploadedData {
     margin:  0px 0px 0px 5px;
 }
 
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}

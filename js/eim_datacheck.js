@@ -11,9 +11,35 @@ var monthNames = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
 ];
 
+// Global graphing variables
+
+var margin = {top: 20, right: 40, bottom: 30, left: 60},
+    width  = 450 - margin.left - margin.right,
+    height = 250 - margin.top - margin.bottom;
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var color = d3.scale.category10();
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
+    .ticks(4);
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .ticks(6);
+    
+    
+// Loop through each row in the EIM template
+//  to find errors
 var findErrors = function(data) {
     
-    // Loop through each row in the EIM template
     var i = 0;
     
     for (i; i<data.length; i++) {
@@ -24,6 +50,25 @@ var findErrors = function(data) {
             monthNames[dateOfCollection.getMonth()] + " " + dateOfCollection.getDay() + ", " + dateOfCollection.getFullYear(),
             data[i]["Fraction_Analyzed"] + " " + data[i]["Result_Parameter_Name"] + " in " + data[i]["Sample_Matrix"]
             ].join(" | "); 
+        
+        // Check for whole-row errors; returns a list [property, error] string pairs.
+        //  Example: [["Sample_ID", "Missing Sample ID"],["Field_Collection_Upper_Depth", "Value out of range"]]
+        var rowErrs = eimRowValidate(data[i]);
+        
+        if (rowErrs.length > 0) {
+            
+            for (var j=0; j<rowErrs.length; j++) {
+                
+                var tableLocation = "<ins>Row " + (i+1) + ", Column " + rowErrs[j][0] + "</ins>";
+            
+                errors.push({
+                    "fieldError":    rowErrs[j][1],
+                    "property":      rowErrs[j][0], 
+                    "tableLocation": tableLocation, 
+                    "rowName":       rowName
+                });
+            };
+        };
         
         // Loop through each column in the row
         for (var property in data[i]) {
@@ -74,8 +119,7 @@ var drawErrors = function() {
         
         $("li#menu-errors").addClass("pure-menu-selected");
         
-        // Loop through each row in the EIM template
-        
+        // Loop through every identified error
         for (var i=0; i<errors.length; i++) {
             
             $("#errorList").append("<li class='error'>" 
@@ -98,7 +142,7 @@ var drawErrors = function() {
         
         for (var i=0; i<errorGroups.length; i++) {
             $("#errorGroups").append("<li>" + 
-                errorGroups[i][0] + "<span class='count'> (" +
+                errorGroups[i][0].replace(/_/g, " ") + "<span class='count'> (" +
                 errorGroups[i][1] + ")</span></li>"
             );
         };
@@ -119,12 +163,40 @@ var summarizeData = function() {
         $("#sidebar").append("<ul id='parameters'></ul>");
         
         $("#uploadedData").append("<h2>Details</h2>"
+            + "<div id='summaryGraph'></div>"
             + "<div id='details'><p>Select a parameter to the left.</p></div>"
+            
         );
         
         $("li#menu-summary").addClass("pure-menu-selected");
         
-        var parameterCounts = _.chain(data.data).countBy("Result_Parameter_Name")
+        // Customize attributes
+        data.data.forEach( function(d) {
+            d.value     = parseFloat(d.Result_Value);
+            
+            try {
+                var theDate = d.Field_Collection_Start_Date.split("/");
+                var theTime = d.Field_Collection_Start_Time.split(":");
+                d.dateJS    = new Date(
+                    theDate[2].slice(0, 4), 
+                    parseInt(theDate[0])-1, 
+                    theDate[1],
+                    theTime[0],
+                    theTime[1],
+                    theTime[2]
+                );
+            } catch(err) {
+                d.dateJS = "";
+            };
+            
+            d.fullParameter = d.Fraction_Analyzed + " " 
+                + d.Result_Parameter_Name + " in " 
+                + d.Sample_Matrix + " (" 
+                + d.Result_Value_Units + ")";
+        });
+        
+        
+        var parameterCounts = _.chain(data.data).countBy("fullParameter")
             .pairs()
             .sortBy(0)
             .value();
@@ -138,6 +210,21 @@ var summarizeData = function() {
             );
         };
         
+        // Set up the graph
+        var svg = d3.select("div#summaryGraph").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+            .attr("class", "graphingArea");
+            
+        svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")");
+
+        svg.append("g")
+          .attr("class", "y axis");
+      
         $("ul#parameters li a").click(function() {
             displayParameterDetails(this);
         });
@@ -145,13 +232,12 @@ var summarizeData = function() {
 }
 
 var displayParameterDetails = function(elem) {
-    //alert($(elem).attr("data-parameterName"));
     
     $("div#details").empty();
     $("div#uploadedData h2").empty();
     
     var theParam = $(elem).attr("data-parameterName");
-    var filteredData = _.filter(data.data, 'Result_Parameter_Name', theParam);
+    var filteredData = _.filter(data.data, 'fullParameter', theParam);
     
     var getVal = function(result) {
         return parseFloat(result.Result_Value);
@@ -160,12 +246,41 @@ var displayParameterDetails = function(elem) {
     var max = _.max(filteredData, getVal).Result_Value;
     var min = _.min(filteredData, getVal).Result_Value;
     
-    $("div#uploadedData h2").append("Details (" + theParam + ")");
-    $("div#details").append("Range is from <strong>"
+    $("div#uploadedData h2").append("Details of " + theParam);
+    $("div#details").append("<p>Range is from <strong>"
         + min + "</strong> to <strong>"
-        + max + "</strong>."
+        + max + "</strong></p>."
     );
     
+
+    
+    // Fill in the graph
+    
+    var svg = d3.select("div#summaryGraph svg g.graphingArea");
+    
+    x.domain(d3.extent(filteredData, function(d) { return d.dateJS })).nice();
+    y.domain(d3.extent(filteredData, function(d) { return d.value  })).nice();
+    
+    d3.select("svg g.x.axis").call(xAxis);
+    d3.select("svg g.y.axis").call(yAxis);
+    
+    // Data join & update
+    var dots = svg.selectAll(".dot")
+        .data(filteredData)
+        .attr("r", 3.5)
+        .attr("cx", function(d) { return x(d.dateJS); })
+        .attr("cy", function(d) { return y(d.value); });
+    
+    // Enter
+    dots.enter().append("circle")
+        .attr("class", "dot")
+        .attr("r", 3.5)
+        .attr("cx", function(d) { return x(d.dateJS); })
+        .attr("cy", function(d) { return y(d.value); });
+        
+    // Exit
+    dots.exit()
+        .remove();
     
 };
 

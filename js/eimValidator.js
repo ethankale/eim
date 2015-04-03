@@ -54,8 +54,9 @@ function validTimeFormat(time) {
 
 // Returns an error description. If the string is empty,
 //  no errors.
+// Designed for validating a single field.
 function eimValidValue(field, value) {
-    var err = ""
+    var err = "";
     
     if (field == "Study_ID") {
     
@@ -135,7 +136,7 @@ function eimValidValue(field, value) {
             err = "'" + value + "' is not a valid value for Field Collector";
         };
     
-    } else if (field == "Field_Collection_Start_Date") {
+    } /*else if (field == "Field_Collection_Start_Date") {
     
         if (value.length < 1) {
             err = "Missing Field Collection Start Date";
@@ -172,7 +173,7 @@ function eimValidValue(field, value) {
             err = "'" + value + "' is not a valid format for Field Collection End Time; must be HH:MM:SS.";
         };
     
-    } else if ((field == "Field_Collection_Comment") & (value.length >= 1)) {
+    } */ else if ((field == "Field_Collection_Comment") & (value.length >= 1)) {
     
         if (value.length > 2000) {
             err = "Field Collection Comment is too long; must be under 2,000 characters.";
@@ -221,9 +222,49 @@ function eimValidValue(field, value) {
             err = "'" + value + "' is not a valid value for Field Collection Depth Units; must be 'cm', 'm', 'ft', or 'in'.";
         };
     
+    } else if ((field == "Well_Water_Level_Measuring_Point_or_TOC_ID") & (value.length >= 1)) {
+    
+        if (["TOC1", "MP1"].indexOf(value) < 0) {
+            err = "'" + value + "' is not a valid value for Well Water Level Measuring Point or TOC ID; must be 'TOC1' or 'MP1'.";
+        };
+    
+    } else if ((field == "Sample_ID") & (value.length >= 1)) {
+    
+        if (value.length > 50) {
+            err = "The Sample ID is too long.";
+        };
+    
     }
     
-    return(err)
+    return(err);
 
 }
 
+// Accepts an EIM row as an object,{field1: value, field2: value},
+//  and runs data checks against multiple values at once.  For instance,
+//  if the row is a measurement, are all the measurement-specific fields
+//  filled in?
+function eimRowValidate(row) {
+    var errs = [];
+    
+    if (row.Field_Collection_Type == "Sample") {
+        
+        if (row.Sample_ID.length < 1) {
+            errs.push(["Sample_ID", "Field_Collection_Type is Sample, but Sample_ID field is empty."]);
+        };
+    };
+    
+    if (!(typeof row.Result_Parameter_Name === "undefined")) {
+        
+        if ("water level in well".indexOf(row.Result_Parameter_Name.toLowerCase().slice(0,19)) >= 0) {
+        
+            if (row.Well_Water_Level_Measuring_Point_or_TOC_ID.length < 1) {
+                errs.push(["Well_Water_Level_Measuring_Point_or_TOC_ID", "The parameter is well water level, but the measuring point/TOC field is empty."]);
+            };
+        };
+    };
+    
+    return(errs);
+    
+
+};
