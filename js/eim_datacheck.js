@@ -170,30 +170,7 @@ var summarizeData = function() {
         
         $("li#menu-summary").addClass("pure-menu-selected");
         
-        // Customize attributes
-        data.data.forEach( function(d) {
-            d.value     = parseFloat(d.Result_Value);
-            
-            try {
-                var theDate = d.Field_Collection_Start_Date.split("/");
-                var theTime = d.Field_Collection_Start_Time.split(":");
-                d.dateJS    = new Date(
-                    theDate[2].slice(0, 4), 
-                    parseInt(theDate[0])-1, 
-                    theDate[1],
-                    theTime[0],
-                    theTime[1],
-                    theTime[2]
-                );
-            } catch(err) {
-                d.dateJS = "";
-            };
-            
-            d.fullParameter = d.Fraction_Analyzed + " " 
-                + d.Result_Parameter_Name + " in " 
-                + d.Sample_Matrix + " (" 
-                + d.Result_Value_Units + ")";
-        });
+
         
         
         var parameterCounts = _.chain(data.data).countBy("fullParameter")
@@ -304,6 +281,31 @@ var parseCSV = function(){
             
             errors  = [];
             data    = results; 
+            
+            // Customize attributes
+            data.data.forEach( function(d) {
+                d.value     = parseFloat(d.Result_Value);
+                
+                try {
+                    var theDate = d.Field_Collection_Start_Date.split("/");
+                    var theTime = d.Field_Collection_Start_Time.split(":");
+                    d.dateJS    = new Date(
+                        theDate[2].slice(0, 4), 
+                        parseInt(theDate[0])-1, 
+                        theDate[1],
+                        theTime[0],
+                        theTime[1],
+                        theTime[2]
+                    );
+                } catch(err) {
+                    d.dateJS = "";
+                };
+                
+                d.fullParameter = d.Fraction_Analyzed + " " 
+                    + d.Result_Parameter_Name + " in " 
+                    + d.Sample_Matrix + " (" 
+                    + d.Result_Value_Units + ")";
+            });
             
             // Go through each row & check for errors
             findErrors(results.data);

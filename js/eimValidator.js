@@ -1,20 +1,24 @@
 
 
 
-// This is a really imperfect date validator; only catches
-//  super egregious errors in formatting.
+function dateFromUSFormatString(str) {
+    var parsedDate = str.split("/");
+    
+    var d = new Date(
+        parsedDate[2].slice(0, 4),
+        parsedDate[0],
+        parsedDate[1]
+    );
+    
+    return d;
+}
+
 function validDateFormat(date) {
     
     var dateIsValid = false;
     
     try {
-        var parsedDate = date.split("/");
-        dateIsValid = (
-            (parsedDate[0] <= 12 & parsedDate[0] >= 1) &
-            (parsedDate[1] <= 31 & parsedDate[1] >= 1) &
-            (parsedDate[2].length == 4 & parseInt(parsedDate[2]))
-        );
-        
+        dateIsValid = !isNaN(dateFromUSFormatString(date).getDate());
     } catch(err) {
         dateIsValid = false;
     };
@@ -136,7 +140,7 @@ function eimValidValue(field, value) {
             err = "'" + value + "' is not a valid value for Field Collector";
         };
     
-    } /*else if (field == "Field_Collection_Start_Date") {
+    } else if (field == "Field_Collection_Start_Date") {
     
         if (value.length < 1) {
             err = "Missing Field Collection Start Date";
@@ -173,7 +177,7 @@ function eimValidValue(field, value) {
             err = "'" + value + "' is not a valid format for Field Collection End Time; must be HH:MM:SS.";
         };
     
-    } */ else if ((field == "Field_Collection_Comment") & (value.length >= 1)) {
+    }  else if ((field == "Field_Collection_Comment") & (value.length >= 1)) {
     
         if (value.length > 2000) {
             err = "Field Collection Comment is too long; must be under 2,000 characters.";
@@ -263,6 +267,8 @@ function eimRowValidate(row) {
             };
         };
     };
+    
+    
     
     return(errs);
     

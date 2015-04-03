@@ -23,7 +23,7 @@ library(gridExtra)
 ######
 
 #file.choose()
-eimData <- read.csv("Z:/batches/results/Sediment data May 2012 through May 2014-Data Sheet.csv_43182.csv")
+eimData <- read.csv("//ecylcyfsvrxfile/wq/RSMP in progress/Streams/EIM Prep/BLrevised_Q1_2015_SJICD-field - Review.csv")
 
 # Optional - handy for my particular setup.
 setwd("Z:/eim")
