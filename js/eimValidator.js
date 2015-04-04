@@ -238,10 +238,9 @@ function eimValidValue(field, value) {
             err = "The Sample ID is too long.";
         };
     
-    }
+    } 
     
     return(err);
-
 }
 
 // Accepts an EIM row as an object,{field1: value, field2: value},
@@ -252,23 +251,46 @@ function eimRowValidate(row) {
     var errs = [];
     
     if (row.Field_Collection_Type == "Sample") {
-        
         if (row.Sample_ID.length < 1) {
             errs.push(["Sample_ID", "Field_Collection_Type is Sample, but Sample_ID field is empty."]);
         };
     };
     
     if (!(typeof row.Result_Parameter_Name === "undefined")) {
-        
         if ("water level in well".indexOf(row.Result_Parameter_Name.toLowerCase().slice(0,19)) >= 0) {
         
             if (row.Well_Water_Level_Measuring_Point_or_TOC_ID.length < 1) {
-                errs.push(["Well_Water_Level_Measuring_Point_or_TOC_ID", "The parameter is well water level, but the measuring point/TOC field is empty."]);
+                errs.push(["Well_Water_Level_Measuring_Point_or_TOC_ID", "The parameter is well water level, but the measuring point/TOC field is empty"]);
             };
         };
     };
     
+    if (!!row.Field_Collection_End_Date & !!row.Field_Collection_Start_Date) {
+        var d1 = dateFromUSFormatString(row.Field_Collection_Start_Date);
+        var d2 = dateFromUSFormatString(row.Field_Collection_End_Date);
+        
+        if (d1 > d2) {
+            errs.push(["Field_Collection_End_Date", "End date of field collection is before start date"])
+        };
+    };
     
+    if (!!row.Result_Reporting_Limit & !!row.Result_Value) {
+        if ((+row.Result_Reporting_Limit > +row.Result_Value) & (!row.Result_Data_Qualifier)) {
+            errs.push(["Result_Data_Qualifier","The result value is greater than the reporting limit, but there is no data qualifier present"])
+        };
+    };
+
+    if ((row.Field_Collection_Type == "Sample") || (row.Field_Collection_Type == "Measurement")) {
+        if (!row.Result_Value) {
+            errs.push(["Result_Value","Result value is missing; it is required for samples and measurements."]);
+        };
+    };
+
+    if ((row.Field_Collection_Type == "Sample") || (row.Field_Collection_Type == "Measurement")) {
+        if (!row.Result_Value_Units) {
+            errs.push(["Result_Value_Units","Result value units are missing; they required for samples and measurements."]);
+        };
+    };
     
     return(errs);
     

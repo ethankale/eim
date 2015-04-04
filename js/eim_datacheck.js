@@ -13,9 +13,9 @@ var monthNames = ["January", "February", "March", "April", "May", "June",
 
 // Global graphing variables
 
-var margin = {top: 20, right: 40, bottom: 30, left: 60},
+var margin = {top: 20, right: 40, bottom: 60, left: 60},
     width  = 450 - margin.left - margin.right,
-    height = 250 - margin.top - margin.bottom;
+    height = 350 - margin.top - margin.bottom;
 
 var x = d3.time.scale()
     .range([0, width]);
@@ -23,7 +23,9 @@ var x = d3.time.scale()
 var y = d3.scale.linear()
     .range([height, 0]);
 
-var color = d3.scale.category10();
+var color = d3.scale.ordinal()
+  .domain(["Not Flagged", "Flagged" ])
+  .range(["#000000", "#969696" ]);
 
 var xAxis = d3.svg.axis()
     .scale(x)
@@ -170,9 +172,6 @@ var summarizeData = function() {
         
         $("li#menu-summary").addClass("pure-menu-selected");
         
-
-        
-        
         var parameterCounts = _.chain(data.data).countBy("fullParameter")
             .pairs()
             .sortBy(0)
@@ -229,11 +228,10 @@ var displayParameterDetails = function(elem) {
         + max + "</strong></p>."
     );
     
-
-    
     // Fill in the graph
     
     var svg = d3.select("div#summaryGraph svg g.graphingArea");
+
     
     x.domain(d3.extent(filteredData, function(d) { return d.dateJS })).nice();
     y.domain(d3.extent(filteredData, function(d) { return d.value  })).nice();
@@ -243,7 +241,7 @@ var displayParameterDetails = function(elem) {
     
     // Data join & update
     var dots = svg.selectAll(".dot")
-        .data(filteredData)
+        .data(filteredData, function(d) { return d.id; })
         .attr("r", 3.5)
         .attr("cx", function(d) { return x(d.dateJS); })
         .attr("cy", function(d) { return y(d.value); });
@@ -253,11 +251,37 @@ var displayParameterDetails = function(elem) {
         .attr("class", "dot")
         .attr("r", 3.5)
         .attr("cx", function(d) { return x(d.dateJS); })
-        .attr("cy", function(d) { return y(d.value); });
+        .attr("cy", function(d) { return y(d.value); })
+        .style("fill-opacity", 1e-6)
+        .style("fill", function(d) { return color(d.qualifier); })
+      .transition()
+        .duration(500)
+        .style("fill-opacity", 1);
         
     // Exit
     dots.exit()
+      .transition()
+        .style("fill-opacity", 1e-6)
         .remove();
+    
+    var legend = svg.selectAll(".legend")
+        .data(color.domain())
+      .enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+ 
+    legend.append("circle")
+        .attr("cx", width - 18)
+        .attr("cy", 10)
+        .attr("r", 3.5)
+        .style("fill", color);
+ 
+    legend.append("text")
+        .attr("x", width - 24)
+        .attr("y", 9)
+        .attr("dy", ".35em")
+        .style("text-anchor", "end")
+        .text(function(d) { return d; });
     
 };
 
@@ -281,6 +305,7 @@ var parseCSV = function(){
             
             errors  = [];
             data    = results; 
+            i       = 0;
             
             // Customize attributes
             data.data.forEach( function(d) {
@@ -305,6 +330,21 @@ var parseCSV = function(){
                     + d.Result_Parameter_Name + " in " 
                     + d.Sample_Matrix + " (" 
                     + d.Result_Value_Units + ")";
+                
+                try {
+                    var flag = d.Result_Data_Qualifier.toUpperCase();
+                    
+                    if (!!flag) {
+                        d.qualifier = "Flagged";
+                    } else {
+                        d.qualifier = "Not Flagged";
+                    };
+                } catch(err) {
+                    d.qualifier = "Flagged";
+                }
+                
+                d.id = i;
+                i++;
             });
             
             // Go through each row & check for errors
