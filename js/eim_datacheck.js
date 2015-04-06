@@ -24,8 +24,8 @@ var y = d3.scale.linear()
     .range([height, 0]);
 
 var color = d3.scale.ordinal()
-  .domain(["Not Flagged", "Flagged" ])
-  .range(["#000000", "#969696" ]);
+  .domain(["Not Flagged", "J", "U", "Other" ])
+  .range(["#000000", "#1b9e77", "#d95f02", "#7570b3" ]);
 
 var xAxis = d3.svg.axis()
     .scale(x)
@@ -264,11 +264,16 @@ var displayParameterDetails = function(elem) {
         .style("fill-opacity", 1e-6)
         .remove();
     
-    var legend = svg.selectAll(".legend")
+    var legend = d3.select("div#summaryGraph svg").selectAll(".legend")
         .data(color.domain())
       .enter().append("g")
         .attr("class", "legend")
-        .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+        .attr("transform", function(d, i) { 
+            var left = ((width + margin.left + margin.right) / 2) * -1;
+            var xLocation = left + (75 * i) + 20; 
+            
+            return "translate(" + xLocation + "," + (height + margin.top + 35) + ")"; 
+        });
  
     legend.append("circle")
         .attr("cx", width - 18)
@@ -281,6 +286,8 @@ var displayParameterDetails = function(elem) {
         .attr("y", 9)
         .attr("dy", ".35em")
         .style("text-anchor", "end")
+        .style("font-size", "0.8em")
+        .style("fill", "gray")
         .text(function(d) { return d; });
     
 };
@@ -334,11 +341,21 @@ var parseCSV = function(){
                 try {
                     var flag = d.Result_Data_Qualifier.toUpperCase();
                     
-                    if (!!flag) {
-                        d.qualifier = "Flagged";
+                    if (flag == "J") {
+                        d.qualifier = "J";
+                    } else if (flag == "U") {
+                        d.qualifier = "U";
+                    } else if (!!flag) {
+                        d.qualifier = "Other";
                     } else {
                         d.qualifier = "Not Flagged";
                     };
+                    
+                    /*if (!!flag) {
+                        d.qualifier = "Flagged";
+                    } else {
+                        d.qualifier = "Not Flagged";
+                    };*/
                 } catch(err) {
                     d.qualifier = "Flagged";
                 }
