@@ -319,8 +319,12 @@ var parseCSV = function(){
                 d.value     = parseFloat(d.Result_Value);
                 
                 try {
-                    var theDate = d.Field_Collection_Start_Date.split("/");
-                    var theTime = d.Field_Collection_Start_Time.split(":");
+                    var theDate = d.Field_Collection_Start_Date
+                        .replace(/'/g, '')
+                        .split("/");
+                    var theTime = d.Field_Collection_Start_Time
+                        .replace(/'/g, '')
+                        .split(":");
                     d.dateJS    = new Date(
                         theDate[2].slice(0, 4), 
                         parseInt(theDate[0])-1, 

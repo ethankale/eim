@@ -2,7 +2,10 @@
 
 
 function dateFromUSFormatString(str) {
-    var parsedDate = str.split("/");
+    var parsedDate = str
+        .replace(/'/g, '')
+        .replace(/"/g, '')
+        .split("/");
     
     var d = new Date(
         parsedDate[2].slice(0, 4),
@@ -35,12 +38,14 @@ function validTimeFormat(time) {
     var timeIsValid = false;
     
     try {
-        var parsedTime = time.split(":");
+        var parsedTime = time
+            .replace(/'/g, '')
+            .replace(/"/g, '')
+            .split(":");
         timeIsValid = (
             (parsedTime[0] <= 24 & parsedTime[0] >= 1) &
             (parsedTime[1] <= 59 & parsedTime[1] >= 0) &
-            (parsedTime[2] <= 59 & parsedTime[2] >= 0) &
-            time.length == 8
+            (parsedTime[2] <= 59 & parsedTime[2] >= 0)
         );
         
     
