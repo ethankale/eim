@@ -23,7 +23,7 @@ library(gridExtra)
 ######
 
 #file.choose()
-eimData <- read.csv("//ecylcyfsvrxfile/wq/RSMP in progress/Streams/EIM Prep/BLrevised_Q1_2015_SJICD-field - Review.csv")
+eimData <- read.csv("C:/Users/nkal461/Desktop/Q1_SJICD.xml_1341266.csv")
 
 # Optional - handy for my particular setup.
 setwd("Z:/eim")

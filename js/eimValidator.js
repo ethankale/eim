@@ -297,6 +297,12 @@ function eimRowValidate(row) {
         };
     };
     
+    if ((row.Field_Collection_Type == "Sample") & (row.Sample_Matrix == "Water")) {
+        if (!row.Fraction_Analyzed) {
+            errs.push(["Fraction_Analyzed","Fraction analyzed is required for water samples."]);
+        };
+    };
+    
     return(errs);
     
 

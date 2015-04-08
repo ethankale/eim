@@ -262,7 +262,7 @@ var displayParameterDetails = function(elem) {
             tooltip.style("opacity", 0.8);
             tooltip.html(
                 d.Location_ID + "<br /> " + 
-                d.Field_Collection_Start_Date + "<br />" +
+                d.dateJS.toLocaleString() + "<br />" +
                 d.value + " " + d.Result_Value_Units
             )
                 .style("left", (d3.event.pageX + 10) + "px")
