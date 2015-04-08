@@ -106,7 +106,7 @@ function validTimeFormat(time) {
             .replace(/"/g, '')
             .split(":");
         timeIsValid = (
-            (parsedTime[0] <= 24 & parsedTime[0] >= 1) &
+            (parsedTime[0] < 24 & parsedTime[0] >= 0) &
             (parsedTime[1] <= 59 & parsedTime[1] >= 0) &
             (parsedTime[2] <= 59 & parsedTime[2] >= 0)
         );

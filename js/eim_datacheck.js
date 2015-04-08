@@ -322,12 +322,14 @@ var parseCSV = function(){
     if (extension != "csv") {
         alert("You must select a .csv file.  If using Excel, select 'Save As' and save the document as a CSV first.");
     } else {
-    
+        $("body").append("<div id='loader'>Loading...</div>");
+        
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
             error:  function(err, file) {
                 console.log("Error:", err, file);
+                $("#loader").remove();
             },
             complete: function(results) {
                 
@@ -350,7 +352,8 @@ var parseCSV = function(){
                             var theDate = d.Field_Collection_Start_Date
                                 .replace(/'/g, '')
                                 .split("/");
-                            var theTime = d.Field_Collection_Start_Time
+                            var timestr = !!d.Field_Collection_Start_Time ? d.Field_Collection_Start_Time : "00:00:00";
+                            var theTime = timestr
                                 .replace(/'/g, '')
                                 .split(":");
                             d.dateJS    = new Date(
@@ -400,6 +403,8 @@ var parseCSV = function(){
                     findErrors(results.data);
                     drawErrors(errors);
                 }
+                
+                $("#loader").remove();
             }
         });
     }
