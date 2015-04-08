@@ -1,4 +1,67 @@
 
+// List of column names
+var eimColumns = [
+    "Study_ID",
+    "Location_ID",
+    "Study_Specific_Location_ID",
+    "Field_Collection_Type",
+    "Field_Collector",
+    "Field_Collection_Start_Date",
+    "Field_Collection_Start_Time",
+    "Field_Collection_End_Date",
+    "Field_Collection_End_Time",
+    "Field_Collection_Comment",
+    "Field_Collection_Area",
+    "Field_Collection_Area_Units",
+    "Field_Collection_Reference_Point",
+    "Field_Collection_Upper_Depth",
+    "Field_Collection_Lower_Depth",
+    "Field_Collection_Depth_Units",
+    "Well_Water_Level_Measuring_Point_or_TOC_ID",
+    "Sample_ID",
+    "Sample_Field_Replicate_ID",
+    "Sample_Replicate_Flag",
+    "Sample_Sub_ID",
+    "Sample_Composite_Flag",
+    "Storm_Event_Qualifier",
+    "Sample_Matrix",
+    "Sample_Source",
+    "Sample_Use",
+    "Sample_Collection_Method",
+    "Sample_Preparation_Method",
+    "Sample_Method_Other",
+    "Sample_Taxon_Name",
+    "Sample_Taxon_TSN",
+    "Sample_Tissue_Type",
+    "Sample_Percent_Sorted",
+    "Result_Parameter_Name",
+    "Result_Parameter_CAS_Number",
+    "Lab_Analysis_Date",
+    "Lab_Analysis_Date_Accuracy",
+    "Lab_Analysis_Time",
+    "Result_Value",
+    "Result_Value_Units",
+    "Result_Reporting_Limit",
+    "Result_Reporting_Limit_Type",
+    "Result_Detection_Limit",
+    "Result_Detection_Limit_Type",
+    "Result_Data_Qualifier",
+    "Fraction_Analyzed",
+    "Field_Filtered_Flag",
+    "Result_Basis",
+    "Digestion_Method",
+    "Water_Level_Accuracy",
+    "Result_Method",
+    "Result_Comment",
+    "Result_Additional_Comment",
+    "Result_Lab_Replicate_ID",
+    "Result_Lab_Name",
+    "Result_Validation_Level",
+    "Result_Taxon_Name",
+    "Result_Taxon_TSN",
+    "Result_Taxon_Unidentified_Species",
+    "Result_Taxon_Life_Stage"
+];
 
 
 function dateFromUSFormatString(str) {
@@ -304,6 +367,4 @@ function eimRowValidate(row) {
     };
     
     return(errs);
-    
-
 };

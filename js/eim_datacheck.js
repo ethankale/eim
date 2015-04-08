@@ -319,84 +319,89 @@ var parseCSV = function(){
     var splitname = file.name.split(".");
     var extension = splitname[splitname.length-1].toLowerCase();
     
-    if (extension == "csv") {
-
+    if (extension != "csv") {
+        alert("You must select a .csv file.  If using Excel, select 'Save As' and save the document as a CSV first.");
+    } else {
+    
         Papa.parse(file, {
-            
             header: true,
-            
+            skipEmptyLines: true,
             error:  function(err, file) {
                 console.log("Error:", err, file);
             },
-            
             complete: function(results) {
                 
-                errors  = [];
-                data    = results; 
-                i       = 0;
+                // eimColumns is defined in eimValidator.js
+                var missingFields = _.difference(eimColumns, _.keys(results.data[0]));
                 
-                // Customize attributes
-                data.data.forEach( function(d) {
-                    d.value     = parseFloat(d.Result_Value);
+                if (missingFields.length > 0) {
+                    alert("The supplied file is not in valid EIM format; columns " + missingFields.join(", ") + " are missing.");
+                } else {
+                
+                    errors  = [];
+                    data    = results; 
+                    i       = 0;
                     
-                    try {
-                        var theDate = d.Field_Collection_Start_Date
-                            .replace(/'/g, '')
-                            .split("/");
-                        var theTime = d.Field_Collection_Start_Time
-                            .replace(/'/g, '')
-                            .split(":");
-                        d.dateJS    = new Date(
-                            theDate[2].slice(0, 4), 
-                            parseInt(theDate[0])-1, 
-                            theDate[1],
-                            theTime[0],
-                            theTime[1],
-                            theTime[2]
-                        );
-                    } catch(err) {
-                        d.dateJS = "";
-                    };
-                    
-                    d.fullParameter = d.Fraction_Analyzed + " " 
-                        + d.Result_Parameter_Name + " in " 
-                        + d.Sample_Matrix + " (" 
-                        + d.Result_Value_Units + ")";
-                    
-                    try {
-                        var flag = d.Result_Data_Qualifier.toUpperCase();
+                    // Customize attributes
+                    data.data.forEach( function(d) {
+                        d.value     = parseFloat(d.Result_Value);
                         
-                        if (flag == "J") {
-                            d.qualifier = "J";
-                        } else if (flag == "U") {
-                            d.qualifier = "U";
-                        } else if (!!flag) {
-                            d.qualifier = "Other";
-                        } else {
-                            d.qualifier = "Not Flagged";
+                        try {
+                            var theDate = d.Field_Collection_Start_Date
+                                .replace(/'/g, '')
+                                .split("/");
+                            var theTime = d.Field_Collection_Start_Time
+                                .replace(/'/g, '')
+                                .split(":");
+                            d.dateJS    = new Date(
+                                theDate[2].slice(0, 4), 
+                                parseInt(theDate[0])-1, 
+                                theDate[1],
+                                theTime[0],
+                                theTime[1],
+                                theTime[2]
+                            );
+                        } catch(err) {
+                            d.dateJS = "";
                         };
                         
-                        /*if (!!flag) {
-                            d.qualifier = "Flagged";
-                        } else {
-                            d.qualifier = "Not Flagged";
-                        };*/
-                    } catch(err) {
-                        d.qualifier = "Other";
-                    }
+                        d.fullParameter = d.Fraction_Analyzed + " " 
+                            + d.Result_Parameter_Name + " in " 
+                            + d.Sample_Matrix + " (" 
+                            + d.Result_Value_Units + ")";
+                        
+                        try {
+                            var flag = d.Result_Data_Qualifier.toUpperCase();
+                            
+                            if (flag == "J") {
+                                d.qualifier = "J";
+                            } else if (flag == "U") {
+                                d.qualifier = "U";
+                            } else if (!!flag) {
+                                d.qualifier = "Other";
+                            } else {
+                                d.qualifier = "Not Flagged";
+                            };
+                            
+                            /*if (!!flag) {
+                                d.qualifier = "Flagged";
+                            } else {
+                                d.qualifier = "Not Flagged";
+                            };*/
+                        } catch(err) {
+                            d.qualifier = "Other";
+                        }
+                        
+                        d.id = i;
+                        i++;
+                    });
                     
-                    d.id = i;
-                    i++;
-                });
-                
-                // Go through each row & check for errors
-                findErrors(results.data);
-                drawErrors(errors);
-                
+                    // Go through each row & check for errors
+                    findErrors(results.data);
+                    drawErrors(errors);
+                }
             }
         });
-    } else {
-        alert("You must select a .csv file.  If using Excel, select 'Save As' and save the document as a CSV first.");
     }
 };
 
