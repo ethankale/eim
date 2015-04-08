@@ -11,6 +11,10 @@ var monthNames = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
 ];
 
+var tooltip = d3.select("body").append("div")   
+    .attr("class", "tooltip")               
+    .style("opacity", 0);
+
 // Global graphing variables
 
 var margin = {top: 20, right: 40, bottom: 60, left: 60},
@@ -25,7 +29,7 @@ var y = d3.scale.linear()
 
 var color = d3.scale.ordinal()
   .domain(["Not Flagged", "J", "U", "Other" ])
-  .range(["#000000", "#1b9e77", "#d95f02", "#7570b3" ]);
+  .range(["#018571", "#a6611a", "#dfc27d", "#80cdc1" ]);
 
 var xAxis = d3.svg.axis()
     .scale(x)
@@ -254,6 +258,19 @@ var displayParameterDetails = function(elem) {
         .attr("cy", function(d) { return y(d.value); })
         .style("fill-opacity", 1e-6)
         .style("fill", function(d) { return color(d.qualifier); })
+        .on("mouseover", function(d) {
+            tooltip.style("opacity", 0.8);
+            tooltip.html(
+                d.Location_ID + "<br /> " + 
+                d.Field_Collection_Start_Date + "<br />" +
+                d.value + " " + d.Result_Value_Units
+            )
+                .style("left", (d3.event.pageX + 10) + "px")
+                .style("top", (d3.event.pageY) + "px")
+        })
+        .on("mouseout", function(d) {
+            tooltip.style("opacity", 0);
+        })
       .transition()
         .duration(500)
         .style("fill-opacity", 1);
@@ -365,7 +382,7 @@ var parseCSV = function(){
                             d.qualifier = "Not Flagged";
                         };*/
                     } catch(err) {
-                        d.qualifier = "Flagged";
+                        d.qualifier = "Other";
                     }
                     
                     d.id = i;
