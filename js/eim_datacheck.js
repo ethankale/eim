@@ -309,14 +309,113 @@ var displayParameterDetails = function(elem) {
     
 };
 
-var parseCSV = function(){ 
+var parseResults = function(results) {
+
+    // eimColumns is defined in eimValidator.js
+    var missingFields = _.difference(eimColumns, _.keys(results.data[0]));
+
+    if (missingFields.length > 0) {
+        alert("The supplied file is not in valid EIM format; columns " + missingFields.join(", ") + " are missing.");
+    } else {
+
+        errors  = [];
+        data    = results; 
+        i       = 0;
+        
+        // Customize attributes
+        data.data.forEach( function(d) {
+            d.value     = parseFloat(d.Result_Value);
+            
+            try {
+                var theDate = d.Field_Collection_Start_Date
+                    .replace(/'/g, '')
+                    .split("/");
+                var timestr = !!d.Field_Collection_Start_Time ? d.Field_Collection_Start_Time : "00:00:00";
+                var theTime = timestr
+                    .replace(/'/g, '')
+                    .split(":");
+                d.dateJS    = new Date(
+                    theDate[2].slice(0, 4), 
+                    parseInt(theDate[0])-1, 
+                    theDate[1],
+                    theTime[0],
+                    theTime[1],
+                    theTime[2]
+                );
+            } catch(err) {
+                d.dateJS = "";
+            };
+            
+            d.fullParameter = d.Fraction_Analyzed + " " 
+                + d.Result_Parameter_Name + " in " 
+                + d.Sample_Matrix + " (" 
+                + d.Result_Value_Units + ")";
+            
+            try {
+                var flag = d.Result_Data_Qualifier.toUpperCase();
+                
+                if (flag == "J") {
+                    d.qualifier = "J";
+                } else if (flag == "U") {
+                    d.qualifier = "U";
+                } else if (!!flag) {
+                    d.qualifier = "Other";
+                } else {
+                    d.qualifier = "Not Flagged";
+                };
+                
+            } catch(err) {
+                d.qualifier = "Other";
+            }
+            
+            d.id = i;
+            i++;
+        });
+        
+        // Go through each row & check for errors
+        findErrors(results.data);
+        drawErrors(errors);
+    }
+
+    $("#loader").remove();
+};
+
+var uploadCSV = function(){ 
     
     $("#uploadedData").empty();
     $("#sidebar").empty();
     
-    var fileInput = document.querySelector("#fileItem");
-    var file = fileInput.files[0];
-    var splitname = file.name.split(".");
+    var unsupported = !window.FileReader;
+    var filePath = "";
+    
+    if (unsupported) {
+        filePath = $("#fileItem").val();
+        
+        // Thanks to http://css.dzone.com/tips/javascript-how-read-and-write
+        try {
+            var fso = new ActiveXObject("Scripting.FileSystemObject");
+            var fileObject = fso.OpenTextFile(filePath, 1);
+            var file = fileObject.ReadAll();
+        } catch(e) {
+            if (e.number == -2146827859) {
+                alert('Unable to access local files due to browser security settings. ' +
+                'To overcome this, go to Tools->Internet Options->Security->Custom Level. ' +
+                'Find the setting for "Initialize and script ActiveX controls not marked as safe" ' +
+                'and change it to "Enable" or "Prompt". \n\n' +
+                'Also consider upgrading to a newer browser.' 
+                );
+            };
+        };
+        
+        
+    } else {
+        var fileInput = document.querySelector("#fileItem");
+        var file = fileInput.files[0];
+        filePath = file.name;
+        
+    };
+    
+    var splitname = filePath.split(".");
     var extension = splitname[splitname.length-1].toLowerCase();
     
     if (extension != "csv") {
@@ -327,91 +426,21 @@ var parseCSV = function(){
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
+            
             error:  function(err, file) {
                 console.log("Error:", err, file);
                 $("#loader").remove();
             },
+            
             complete: function(results) {
-                
-                // eimColumns is defined in eimValidator.js
-                var missingFields = _.difference(eimColumns, _.keys(results.data[0]));
-                
-                if (missingFields.length > 0) {
-                    alert("The supplied file is not in valid EIM format; columns " + missingFields.join(", ") + " are missing.");
-                } else {
-                
-                    errors  = [];
-                    data    = results; 
-                    i       = 0;
-                    
-                    // Customize attributes
-                    data.data.forEach( function(d) {
-                        d.value     = parseFloat(d.Result_Value);
-                        
-                        try {
-                            var theDate = d.Field_Collection_Start_Date
-                                .replace(/'/g, '')
-                                .split("/");
-                            var timestr = !!d.Field_Collection_Start_Time ? d.Field_Collection_Start_Time : "00:00:00";
-                            var theTime = timestr
-                                .replace(/'/g, '')
-                                .split(":");
-                            d.dateJS    = new Date(
-                                theDate[2].slice(0, 4), 
-                                parseInt(theDate[0])-1, 
-                                theDate[1],
-                                theTime[0],
-                                theTime[1],
-                                theTime[2]
-                            );
-                        } catch(err) {
-                            d.dateJS = "";
-                        };
-                        
-                        d.fullParameter = d.Fraction_Analyzed + " " 
-                            + d.Result_Parameter_Name + " in " 
-                            + d.Sample_Matrix + " (" 
-                            + d.Result_Value_Units + ")";
-                        
-                        try {
-                            var flag = d.Result_Data_Qualifier.toUpperCase();
-                            
-                            if (flag == "J") {
-                                d.qualifier = "J";
-                            } else if (flag == "U") {
-                                d.qualifier = "U";
-                            } else if (!!flag) {
-                                d.qualifier = "Other";
-                            } else {
-                                d.qualifier = "Not Flagged";
-                            };
-                            
-                            /*if (!!flag) {
-                                d.qualifier = "Flagged";
-                            } else {
-                                d.qualifier = "Not Flagged";
-                            };*/
-                        } catch(err) {
-                            d.qualifier = "Other";
-                        }
-                        
-                        d.id = i;
-                        i++;
-                    });
-                    
-                    // Go through each row & check for errors
-                    findErrors(results.data);
-                    drawErrors(errors);
-                }
-                
-                $("#loader").remove();
+                parseResults(results);
             }
         });
     }
 };
 
 // Register onclick events & generally set up the document
-$("#fileItem").change(parseCSV);
+$("#fileItem").change(uploadCSV);
 $("#menu-summary a").click(summarizeData);
 $("#menu-errors a").click(drawErrors);
 
