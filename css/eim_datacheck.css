@@ -7,6 +7,8 @@
     border-bottom-width: 2px;
 }
 
+/* Applies to all lists, including summary & error, left nav & details */
+
 ul {
     list-style-type: none;
 }
@@ -38,6 +40,13 @@ ul li a:hover {
     color: black;
 }
 
+.count {
+    font-size: 70%;
+    color: gray;
+}
+
+/* Error list specific rules */
+
 ul#errorList li p.rowName {
     padding: 0px;
     margin: 3px 0px 0px 0px;
@@ -45,15 +54,28 @@ ul#errorList li p.rowName {
     font-size: small;
 }
 
-.count {
-    font-size: 70%;
-    color: gray;
+ul#errorGroups li a {
+    padding: 0px 0px 0px 3px;
+    margin:  0px 0px 0px 3px;
 }
+
+ul#errorGroups li.selected {
+    background: lightGray;
+    border-radius: 5px;
+}
+
+ul#errorGroups li.selected a {
+    color: black;
+}
+
+/* General rules */
 
 div#uploadedData {
     padding: 0px 0px 0px 5px;
     margin:  0px 0px 0px 5px;
 }
+
+/* Chart-specific rules */
 
 .axis path,
 .axis line {
@@ -78,7 +100,7 @@ div.tooltip {
     pointer-events: none;
 }
 
-/* From https://github.com/lukehaas/css-loaders (MIT license) */
+/* Loading animation, from https://github.com/lukehaas/css-loaders (MIT license) */
 #loader {
   margin: auto;
   font-size: 10px;
@@ -120,5 +142,8 @@ div.tooltip {
     transform: rotate(360deg);
   }
 }
+
+
+
 
 

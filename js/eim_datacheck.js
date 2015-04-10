@@ -119,16 +119,15 @@ var drawErrors = function() {
         $("li#menu-summary").removeClass("pure-menu-selected");
         
         $("#uploadedData").append("<h2>Details</h2>");
+        $("#uploadedData").append("<div id='pagination'></div>")
         $("#uploadedData").append("<ul id='errorList'></ul>");
-        
-
         
         $("li#menu-errors").addClass("pure-menu-selected");
         
         // Loop through every identified error
         for (var i=0; i<errors.length; i++) {
-            
-            $("#errorList").append("<li class='error'>" 
+            $("#errorList").append("<li class='error "
+                + errors[i]["property"]      + "' style='display: none'>" 
                 + errors[i]["tableLocation"] + " - "
                 + errors[i]["fieldError"]    + "<p class='rowName'>" 
                 + errors[i]["rowName"]       + "</p></li>"
@@ -145,13 +144,29 @@ var drawErrors = function() {
         
         $("#sidebar").append("<h3>Error Types</h3>");
         $("#sidebar").append("<ul id='errorGroups'></ul>");
+
         
         for (var i=0; i<errorGroups.length; i++) {
-            $("#errorGroups").append("<li>" + 
-                errorGroups[i][0].replace(/_/g, " ") + "<span class='count'> (" +
+            $("#errorGroups").append("<li> <a href='#' data-errorname='" +
+                errorGroups[i][0] + "'>" +
+                errorGroups[i][0].replace(/_/g, " ") + "</a> <span class='count'> (" +
                 errorGroups[i][1] + ")</span></li>"
             );
         };
+        
+        // The sidebar error groups (ul#errorGroups li a) have the EIM column name in a data-errorname attribute;
+        //  the indivdual errors (ul#errorlist li) have a matching class.
+        $("ul#errorGroups li a").click( function() {
+            var selector = "ul#errorList li." + this.dataset.errorname;
+            
+            $(this).parent().parent().children().removeClass("selected"); 
+            $(this).parent().addClass("selected"); 
+            $("ul#errorList li").hide();
+            $(selector).show()
+        });
+        
+        $("ul#errorGroups li a").filter(":first").click();
+        
     };
 };
 
