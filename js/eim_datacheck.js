@@ -46,6 +46,31 @@ var yAxis = d3.svg.axis()
 //  to find errors
 var findErrors = function(data) {
     
+    // Check for whole-table errors, like repeated values
+    //var numberOfRows    = data.data.length;
+    //var numberUniqRows  = _.uniq(data.data, function(result) { return _.pick(result, uniqueColumns) }).length;
+    
+    // http://stackoverflow.com/questions/22280775/underscore-equivalent-of-pick-for-arrays
+    // http://stackoverflow.com/questions/840781/easiest-way-to-find-duplicate-values-in-a-javascript-array
+    var sorted = [];
+    
+    // Start by making an array with only the columns we're interested in.
+    for (var i=0; i<data.length; i++) {
+        var pickedRow = _.pick(data[i], uniqueColumns);
+        sorted.push(pickedRow);
+    };
+    
+    // Then sort the row, and pull out any repeated values.
+    sorted.sort();
+    var duplicates = [];
+    for (var i=0; i<sorted.length; i++) {
+        if (sorted[i+1] == sorted[i]) {
+            duplicates.push(sorted[i]);
+        };
+    };
+    
+    
+    
     var i = 0;
     
     for (i; i<data.length; i++) {
@@ -65,7 +90,7 @@ var findErrors = function(data) {
             
             for (var j=0; j<rowErrs.length; j++) {
                 
-                var tableLocation = "<ins>Row " + (i+1) + ", Column " + rowErrs[j][0] + "</ins>";
+                var tableLocation = "<ins>Row " + (i+2) + ", Column " + rowErrs[j][0] + "</ins>";
             
                 errors.push({
                     "fieldError":    rowErrs[j][1],
@@ -157,7 +182,9 @@ var drawErrors = function() {
         // The sidebar error groups (ul#errorGroups li a) have the EIM column name in a data-errorname attribute;
         //  the indivdual errors (ul#errorlist li) have a matching class.
         $("ul#errorGroups li a").click( function() {
-            var selector = "ul#errorList li." + this.dataset.errorname;
+            //This is the right way, but have to support IE9...
+            //var selector = "ul#errorList li." + this.dataset.errorname;
+            var selector = "ul#errorList li." + this.getAttribute('data-errorname');
             
             $(this).parent().parent().children().removeClass("selected"); 
             $(this).parent().addClass("selected"); 

@@ -59,9 +59,16 @@ ul#errorGroups li a {
     margin:  0px 0px 0px 3px;
 }
 
-ul#errorGroups li.selected {
-    background: lightGray;
+ul#errorGroups li {
     border-radius: 5px;
+    border: 1px solid #FFFFFF;
+}
+
+/* Stole this color scheme from GitHub */
+ul#errorGroups li.selected {
+    background: #f8f8f8;
+    border-radius: 5px;
+    border: 1px solid #e5e5e5;
 }
 
 ul#errorGroups li.selected a {

@@ -63,6 +63,24 @@ var eimColumns = [
     "Result_Taxon_Life_Stage"
 ];
 
+// List of columns that must, in combination, be unique for all rows
+var uniqueColumns = [
+    "Study_ID",
+    "Location_ID",
+    "Study_Specific_Location_ID",
+    "Field_Collection_Type",
+    "Field_Collection_Start_Date",
+    "Field_Collection_Start_Time",
+    "Field_Collection_Upper_Depth",
+    "Field_Collection_Lower_Depth",
+    "Field_Collection_Depth_Units",
+    "Sample_Field_Replicate_ID",
+    "Sample_Replicate_Flag",
+    "Sample_Matrix",
+    "Sample_Source",
+    "Result_Parameter_Name",
+    "Fraction_Analyzed"
+];
 
 function dateFromUSFormatString(str) {
     var parsedDate = str
